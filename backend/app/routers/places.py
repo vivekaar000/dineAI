@@ -2,8 +2,13 @@
 Google Places API router — live restaurant search and nearby POI data.
 """
 import httpx
-from fastapi import APIRouter, HTTPException, Query
+from datetime import datetime
+from fastapi import APIRouter, HTTPException, Query, Depends
+from sqlalchemy.orm import Session
 from app.config import settings
+from app.db import get_db
+from app import models
+from app.routers.analyze import analyze_restaurant
 
 router = APIRouter()
 
@@ -103,11 +108,19 @@ async def places_density(lat: float, lng: float):
 
 
 @router.get("/places/analyze-live/{place_id}")
-async def analyze_live(place_id: str):
+async def analyze_live(place_id: str, db: Session = Depends(get_db)):
     """
     Full TTS analysis for a Google Place ID (not in local DB).
     Fetches real data from Places API and runs the scoring pipeline.
+    Saves the data to the DB so subsequent requests for the same place_id use the cache.
     """
+    # Check if already in DB
+    existing = db.query(models.Restaurant).filter(models.Restaurant.place_id == place_id).first()
+    if existing:
+        res = analyze_restaurant(existing.id, db)
+        res["place_id"] = place_id
+        res["restaurant"]["place_id"] = place_id
+        return res
     from app.scoring.pipeline import score_restaurant
     from app.scoring.signal_tourist_density import fetch_tourist_density, compute_signal as density_score
     from app.scoring.signal_review_linguistics import analyze_review
@@ -189,17 +202,77 @@ async def analyze_live(place_id: str):
 
     scores = score_restaurant(restaurant, context)
 
-    return {
-        "place_id": place_id,
-        "restaurant": {
-            "name": result.get("name"),
-            "address": result.get("formatted_address"),
-            "lat": lat,
-            "lng": lng,
-            "avg_price": avg_price,
-            "google_rating": result.get("rating"),
-            "price_level": price_level,
-        },
-        "geo_data": geo_data,
-        **scores,
-    }
+    # Save to database to avoid future API costs
+    address_parts = result.get("formatted_address", "").split(",")
+    city_guess = "Unknown"
+    if len(address_parts) >= 2:
+        city_guess = address_parts[-2].strip().split(" ")[0]
+
+    new_rest = models.Restaurant(
+        place_id=place_id,
+        name=result.get("name"),
+        cuisine="Restaurant",
+        address=result.get("formatted_address"),
+        city=city_guess,
+        lat=lat,
+        lng=lng,
+        avg_price=avg_price,
+    )
+    db.add(new_rest)
+    db.commit()
+    db.refresh(new_rest)
+
+    geo_obj = models.GeoBusinessContext(
+        restaurant_id=new_rest.id,
+        **geo_data
+    )
+    db.add(geo_obj)
+
+    # Reviews
+    for rev in analyzed_reviews:
+        review_obj = models.Review(
+            restaurant_id=new_rest.id,
+            text=rev.get("text", ""),
+            rating=rev.get("rating", 4),
+            sentiment_score=rev.get("sentiment_score", 0.5),
+            tourist_keyword_count=rev.get("tourist_keyword_count", 0),
+            aesthetic_keyword_count=rev.get("aesthetic_keyword_count", 0),
+            quality_keyword_count=rev.get("quality_keyword_count", 0),
+        )
+        db.add(review_obj)
+
+    # Reviewer metadata
+    for rm in reviewer_metadata:
+        rm_obj = models.ReviewerMetadata(
+            restaurant_id=new_rest.id,
+            reviewer_city=rm.get("reviewer_city"),
+            total_reviews_by_user=rm.get("total_reviews_by_user"),
+            is_local=rm.get("is_local"),
+            is_single_review=rm.get("is_single_review")
+        )
+        db.add(rm_obj)
+
+    # Score cache
+    cache = models.ScoreCache(
+        restaurant_id=new_rest.id,
+        tts_score=scores["tts_score"],
+        local_authenticity_score=scores["local_authenticity_score"],
+        price_inflation_score=scores["signals"]["price_inflation"]["score"],
+        review_linguistics_score=scores["signals"]["review_linguistics"]["score"],
+        tourist_density_score=scores["signals"]["tourist_density"]["score"],
+        menu_engineering_score=scores["signals"]["menu_engineering"]["score"],
+        repeat_local_score=scores["signals"]["repeat_local"]["score"],
+        attraction_proximity_score=scores["signals"]["attraction_proximity"]["score"],
+        price_inflation_pct=scores["signals"]["price_inflation"].get("inflation_pct", 0),
+        computed_at=datetime.utcnow(),
+    )
+    db.add(cache)
+    db.commit()
+
+    # Use the normal analyze pipeline to return exactly what frontend expects
+    res = analyze_restaurant(new_rest.id, db)
+    res["place_id"] = place_id
+    res["restaurant"]["place_id"] = place_id
+    res["geo_data"] = geo_data
+    
+    return res

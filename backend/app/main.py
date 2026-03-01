@@ -13,6 +13,28 @@ startup_errors = []
 async def lifespan(app: FastAPI):
     # Create tables
     models.Base.metadata.create_all(bind=engine)
+
+    # Auto-migration for place_id
+    try:
+        from app.db import SessionLocal
+        from sqlalchemy import text
+        db = SessionLocal()
+        try:
+            db.execute(text("SELECT place_id FROM restaurants LIMIT 1"))
+        except Exception:
+            db.rollback()
+            try:
+                db.execute(text("ALTER TABLE restaurants ADD COLUMN place_id VARCHAR(255);"))
+                db.commit()
+                db.execute(text("CREATE UNIQUE INDEX ix_restaurants_place_id ON restaurants (place_id);"))
+                db.commit()
+            except Exception as e_migration:
+                print(f"Migration error: {e_migration}")
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"Migration setup error: {e}")
+
     # Generate OSM data file and load restaurants
     try:
         import importlib, os

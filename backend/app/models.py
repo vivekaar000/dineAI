@@ -6,6 +6,7 @@ from app.db import Base
 class Restaurant(Base):
     __tablename__ = "restaurants"
     id = Column(Integer, primary_key=True, index=True)
+    place_id = Column(String(255), unique=True, index=True)
     name = Column(String(255), nullable=False)
     cuisine = Column(String(100))
     address = Column(Text)
