@@ -4,6 +4,49 @@ Uses pre-computed counts of nearby OSM POIs (hotels, attractions, souvenir shops
 within a 300m radius of the restaurant.
 """
 from typing import Optional
+import httpx
+import asyncio
+
+async def fetch_tourist_density(lat: float, lng: float, api_key: str) -> dict:
+    """
+    Fetch nearby POIs using Google Places Nearby Search.
+    Makes concurrent requests for hotels and attractions to evaluate tourist density.
+    """
+    if not api_key:
+        return {"nearby_souvenir_shops": 0, "nearby_hotels": 0, "nearby_tour_offices": 0, "nearby_attractions": 0}
+
+    url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+    
+    async def _fetch_type(poi_type: str) -> int:
+        params = {
+            "location": f"{lat},{lng}",
+            "radius": 300,
+            "type": poi_type,
+            "key": api_key,
+        }
+        async with httpx.AsyncClient() as client:
+            try:
+                resp = await client.get(url, params=params)
+                data = resp.json()
+                if data.get("status") == "OK":
+                    return len(data.get("results", []))
+                return 0
+            except Exception:
+                return 0
+        return 0
+
+    # Fetch hotels and attractions concurrently
+    hotels, attractions = await asyncio.gather(
+        _fetch_type("lodging"),
+        _fetch_type("tourist_attraction")
+    )
+    
+    return {
+        "nearby_souvenir_shops": 0, # harder to pinpoint via single type
+        "nearby_hotels": hotels,
+        "nearby_tour_offices": 0,
+        "nearby_attractions": attractions
+    }
 
 def compute_signal(geo_context: dict) -> float:
     """
@@ -29,4 +72,4 @@ def compute_signal(geo_context: dict) -> float:
 
     # Cap at 15 weighted units = 100 score (OSM data is sparser than Google Places so we lower the cap)
     score = min(weighted_sum / 15.0, 1.0) * 100.0
-    return float(round(score, 2))
+    return float(round(score))
