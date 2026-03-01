@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Settings - Liquid Glass UI</title>
+<!-- Tailwind CSS with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            lavender: {
+              light: '#E0D7FF',
+              DEFAULT: '#A78BFA',
+              dark: '#7C3AED',
+            },
+            glass: {
+              dark: 'rgba(24, 24, 27, 0.8)',
+              border: 'rgba(255, 255, 255, 0.1)',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+<style data-purpose="liquid-glass-effects">
+    .glass-morphism {
+      background: rgba(24, 24, 27, 0.75);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+    }
+
+    .bg-blur-overlay {
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+    }
+
+    /* Custom Input Focus */
+    .lavender-focus:focus {
+      outline: none;
+      border-color: #A78BFA !important;
+      box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.2);
+    }
+
+    /* Custom Slider (Range Input) */
+    input[type='range'] {
+      -webkit-appearance: none;
+      background: rgba(255, 255, 255, 0.1);
+      height: 4px;
+      border-radius: 2px;
+    }
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: #A78BFA;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
+    }
+
+    /* Custom Scrollbar for the modal content */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body class="bg-[#09090b] font-sans text-zinc-200 antialiased overflow-hidden">
+<!-- BEGIN: Mock Background Chat Interface -->
+<main class="fixed inset-0 z-0 flex flex-col p-8 opacity-50 grayscale-[0.2]">
+<header class="flex items-center justify-between mb-12">
+<div class="h-8 w-32 bg-zinc-800 rounded-lg"></div>
+<div class="h-10 w-10 bg-zinc-800 rounded-full"></div>
+</header>
+<div class="flex-1 space-y-8 max-w-3xl mx-auto w-full">
+<div class="flex gap-4">
+<div class="h-10 w-10 shrink-0 bg-zinc-800 rounded-full"></div>
+<div class="space-y-2 w-full">
+<div class="h-4 w-3/4 bg-zinc-800 rounded"></div>
+<div class="h-4 w-1/2 bg-zinc-800 rounded"></div>
+</div>
+</div>
+<div class="flex gap-4 justify-end">
+<div class="space-y-2 w-2/3">
+<div class="h-4 w-full bg-zinc-700 rounded"></div>
+<div class="h-4 w-4/5 bg-zinc-700 rounded float-right"></div>
+</div>
+<div class="h-10 w-10 shrink-0 bg-zinc-700 rounded-full"></div>
+</div>
+</div>
+<footer class="mt-auto max-w-3xl mx-auto w-full">
+<div class="h-14 w-full bg-zinc-800 rounded-2xl border border-zinc-700"></div>
+</footer>
+</main>
+<!-- END: Mock Background Chat Interface -->
+<!-- BEGIN: Settings Modal Overlay -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-blur-overlay" id="settings-overlay">
+<!-- BEGIN: Settings Card -->
+<section class="glass-morphism w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-[2.5rem] flex flex-col transition-all duration-300 transform scale-100" data-purpose="settings-panel">
+<!-- Modal Header -->
+<header class="px-8 pt-8 pb-6 flex items-center justify-between border-b border-white/5">
+<div>
+<h2 class="text-2xl font-semibold text-white tracking-tight">Settings</h2>
+<p class="text-zinc-400 text-sm mt-1">Configure your AI assistant preferences</p>
+</div>
+<button aria-label="Close settings" class="p-2 hover:bg-white/5 rounded-full transition-colors">
+<svg class="text-zinc-400" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+</button>
+</header>
+<!-- Modal Body (Scrollable) -->
+<div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-10">
+<!-- Profile Section -->
+<div class="space-y-4" data-purpose="settings-section">
+<h3 class="text-xs font-bold uppercase tracking-widest text-lavender/70">Profile &amp; Identity</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-sm font-medium text-zinc-300">Display Name</label>
+<input class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-zinc-200 lavender-focus transition-all duration-200" type="text" value="Alex Rivera"/>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-medium text-zinc-300">AI Persona Name</label>
+<input class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-zinc-200 lavender-focus transition-all duration-200" placeholder="e.g. Jarvis" type="text"/>
+</div>
+</div>
+</div>
+<!-- AI Configuration Section -->
+<div class="space-y-6" data-purpose="settings-section">
+<h3 class="text-xs font-bold uppercase tracking-widest text-lavender/70">Intelligence &amp; Response</h3>
+<!-- Slider Element -->
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<label class="text-sm font-medium text-zinc-300">Temperature (Creativity)</label>
+<span class="text-xs font-mono text-lavender bg-lavender/10 px-2 py-0.5 rounded">0.7</span>
+</div>
+<input class="w-full cursor-pointer" max="1" min="0" step="0.1" type="range" value="0.7"/>
+<div class="flex justify-between text-[10px] text-zinc-500 font-medium">
+<span>PRECISE</span>
+<span>CREATIVE</span>
+</div>
+</div>
+<!-- Toggle Elements -->
+<div class="space-y-4 pt-2">
+<div class="flex items-center justify-between group">
+<div>
+<p class="text-sm font-medium text-zinc-200">Context Retention</p>
+<p class="text-xs text-zinc-500">Allow AI to remember previous conversations</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-lavender"></div>
+</label>
+</div>
+<div class="flex items-center justify-between group">
+<div>
+<p class="text-sm font-medium text-zinc-200">Web Search Access</p>
+<p class="text-xs text-zinc-500">Real-time data fetching for current events</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-lavender"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- Appearance Section -->
+<div class="space-y-4" data-purpose="settings-section">
+<h3 class="text-xs font-bold uppercase tracking-widest text-lavender/70">Interface</h3>
+<div class="grid grid-cols-3 gap-3">
+<button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-lavender bg-lavender/5 group transition-all">
+<div class="h-8 w-full bg-zinc-900 rounded-md border border-white/10 flex items-center px-2">
+<div class="w-2 h-2 rounded-full bg-lavender"></div>
+</div>
+<span class="text-[11px] font-medium text-lavender">Liquid Dark</span>
+</button>
+<button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-zinc-800 bg-white/5 hover:bg-white/10 transition-all group">
+<div class="h-8 w-full bg-white rounded-md border border-zinc-300 flex items-center px-2">
+<div class="w-2 h-2 rounded-full bg-zinc-400"></div>
+</div>
+<span class="text-[11px] font-medium text-zinc-400 group-hover:text-zinc-200">Crystal Light</span>
+</button>
+<button class="flex flex-col items-center gap-2 p-3 rounded-xl border border-zinc-800 bg-white/5 hover:bg-white/10 transition-all group">
+<div class="h-8 w-full bg-zinc-950 rounded-md border border-zinc-800 flex items-center px-2">
+<div class="w-2 h-2 rounded-full bg-amber-500"></div>
+</div>
+<span class="text-[11px] font-medium text-zinc-400 group-hover:text-zinc-200">Deep Space</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Modal Footer -->
+<footer class="px-8 py-6 bg-black/20 border-t border-white/5 flex items-center justify-end gap-4">
+<button class="px-6 py-2.5 text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+          Discard
+        </button>
+<button class="px-8 py-2.5 text-sm font-semibold bg-lavender text-zinc-950 rounded-xl hover:bg-lavender-light shadow-[0_0_20px_rgba(167,139,250,0.3)] transition-all active:scale-95">
+          Save Changes
+        </button>
+</footer>
+</section>
+<!-- END: Settings Card -->
+</div>
+<!-- END: Settings Modal Overlay -->
+<!-- BEGIN: Interactive Scripts -->
+<script data-purpose="toggle-handling">
+    // Visual-only interactivity for the demo
+    const overlay = document.getElementById('settings-overlay');
+    
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        overlay.classList.add('opacity-0', 'pointer-events-none');
+      }
+    });
+
+    // Handle range display update
+    const ranges = document.querySelectorAll('input[type="range"]');
+    ranges.forEach(range => {
+      range.addEventListener('input', (e) => {
+        const valSpan = e.target.parentElement.querySelector('span.text-lavender');
+        if (valSpan) valSpan.textContent = e.target.value;
+      });
+    });
+  </script>
+<!-- END: Interactive Scripts -->
+</body></html>

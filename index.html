@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html class="h-full" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Aura — Local AI Portal</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { lavender: { 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed' }, glass: { DEFAULT: 'rgba(255,255,255,0.05)' } },
+          fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #050505 100%);
+      color: #e5e7eb;
+      overflow: hidden;
+    }
+
+    .liquid-glass {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    }
+
+    .message-user {
+      background: rgba(45, 45, 45, 0.4);
+      backdrop-filter: blur(12px);
+      border-radius: 1.5rem 1.5rem 0.25rem 1.5rem;
+    }
+
+    .message-ai {
+      background: #000;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      border-radius: 1.5rem 1.5rem 1.5rem 0.25rem;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .lavender-glow {
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+    }
+
+    @keyframes fade {
+
+      0%,
+      100% {
+        opacity: 0.2;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    .dot {
+      animation: fade 1.4s infinite ease-in-out;
+    }
+
+    .dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    .chat-container::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .chat-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .chat-container::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+
+    .page-enter {
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .status-connected {
+      background: #4ade80;
+      box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+    }
+
+    .status-disconnected {
+      background: #f87171;
+      box-shadow: 0 0 8px rgba(248, 113, 113, 0.5);
+    }
+
+    .status-checking {
+      background: #fbbf24;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    pre code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+    }
+
+    .message-ai pre {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      overflow-x: auto;
+      margin-top: 0.75rem;
+    }
+
+    .message-ai code:not(pre code) {
+      background: rgba(139, 92, 246, 0.15);
+      padding: 0.15rem 0.4rem;
+      border-radius: 0.25rem;
+      font-size: 0.85em;
+    }
+  </style>
+</head>
+
+<body class="h-full flex flex-col font-sans antialiased page-enter">
+  <!-- Header -->
+  <header class="fixed top-0 w-full z-50 flex justify-between items-center px-8 py-5">
+    <a href="index.html" class="flex items-center space-x-3">
+      <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-lavender-500 to-indigo-600 blur-[2px]"></div>
+      <span class="text-xl font-medium tracking-tight">Aura</span>
+    </a>
+    <nav class="hidden md:flex space-x-8 text-sm font-light text-gray-400">
+      <a class="hover:text-white transition-colors" href="features.html">Features</a>
+      <a class="hover:text-white transition-colors" href="docs.html">Docs</a>
+    </nav>
+    <div class="flex items-center space-x-4">
+      <div id="connection-badge"
+        class="flex items-center gap-2 px-3 py-1.5 rounded-full liquid-glass text-xs cursor-pointer"
+        title="Click to reconnect">
+        <div class="status-dot status-checking" id="status-dot"></div>
+        <span class="text-gray-400" id="status-text">Checking...</span>
+      </div>
+      <a href="settings.html" class="p-2 hover:bg-white/5 rounded-full transition-colors text-gray-400 hover:text-white"
+        aria-label="Settings">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+          </path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
+          </path>
+        </svg>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Chat -->
+  <main class="flex-grow flex flex-col relative pt-24 pb-40 max-w-4xl mx-auto w-full px-4 h-full">
+    <!-- Hero (visible when no messages) -->
+    <div class="flex-grow flex flex-col items-center justify-center text-center transition-all duration-700"
+      id="hero-heading">
+      <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-lavender-500 to-indigo-600 blur-[4px] mb-8"></div>
+      <h1
+        class="text-4xl md:text-5xl font-semibold bg-gradient-to-b from-white to-gray-500 bg-clip-text text-transparent mb-4">
+        Your local AI, ready.</h1>
+      <p class="text-gray-500 text-base max-w-md">Connected to the LLM running on your NAS. Ask anything.</p>
+      <div class="mt-8 flex flex-wrap gap-2 justify-center">
+        <button
+          class="suggestion-chip px-4 py-2 rounded-2xl liquid-glass text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all">"Summarize
+          this article for me"</button>
+        <button
+          class="suggestion-chip px-4 py-2 rounded-2xl liquid-glass text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all">"Write
+          a Python script to..."</button>
+        <button
+          class="suggestion-chip px-4 py-2 rounded-2xl liquid-glass text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-all">"Explain
+          how Docker works"</button>
+      </div>
+    </div>
+
+    <!-- Chat Messages -->
+    <div class="chat-container flex-grow overflow-y-auto flex flex-col space-y-6 px-2 hidden" id="chat-history"></div>
+
+    <!-- Typing indicator -->
+    <div class="flex items-center space-x-2 px-2 hidden" id="typing-indicator">
+      <div class="flex space-x-1 py-3 px-4 rounded-full liquid-glass border-white/5">
+        <div class="w-1.5 h-1.5 bg-lavender-400 rounded-full dot"></div>
+        <div class="w-1.5 h-1.5 bg-lavender-400 rounded-full dot"></div>
+        <div class="w-1.5 h-1.5 bg-lavender-400 rounded-full dot"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bottom Input Bar -->
+  <footer class="fixed bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black via-black/80 to-transparent z-40">
+    <div class="max-w-3xl mx-auto relative group">
+      <div
+        class="liquid-glass rounded-3xl p-3 flex items-center gap-3 transition-all duration-300 group-focus-within:border-lavender-500/30 group-focus-within:ring-1 ring-lavender-500/20 shadow-2xl">
+        <!-- Model selector -->
+        <div class="relative">
+          <button id="btn-model"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-2xl hover:bg-white/5 text-gray-400 text-xs font-medium transition-colors whitespace-nowrap"
+            title="Select model">
+            <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <span id="current-model">No models</span>
+            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div id="model-dropdown"
+            class="absolute bottom-full left-0 mb-2 w-64 liquid-glass rounded-2xl p-2 hidden max-h-60 overflow-y-auto z-50">
+            <p class="text-[10px] text-gray-500 uppercase tracking-widest px-3 py-1.5">Available Models</p>
+            <div id="model-list"></div>
+          </div>
+        </div>
+
+        <input class="flex-grow bg-transparent border-none focus:ring-0 text-white placeholder-gray-500 text-sm"
+          id="chat-input" placeholder="Message your AI..." type="text" autocomplete="off" />
+        <div class="flex items-center space-x-2 pr-1">
+          <button id="btn-clear"
+            class="flex items-center px-3 py-2 rounded-2xl hover:bg-white/5 text-gray-400 text-xs transition-colors"
+            title="New chat">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+          <button id="btn-send"
+            class="flex items-center justify-center px-5 py-2 bg-lavender-600 hover:bg-lavender-500 text-white rounded-2xl font-medium transition-all lavender-glow active:scale-95 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled>
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <p class="text-center text-[10px] text-gray-600 mt-3 tracking-widest uppercase" id="footer-info">Powered by your
+        local LLM</p>
+    </div>
+  </footer>
+
+  <!-- Toast -->
+  <div id="toast"
+    class="fixed bottom-28 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl liquid-glass text-sm text-white opacity-0 pointer-events-none transition-all duration-300 translate-y-4 z-50 border border-white/10">
+  </div>
+
+  <script>
+    // ───── Config (persisted in localStorage) ─────
+    const DEFAULT_CONFIG = {
+      endpoint: 'http://localhost:11434',
+      format: 'ollama',       // ollama | openai
+      model: '',
+      temperature: 0.7,
+      contextRetention: true
+    };
+
+    function getConfig() {
+      try { return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem('aura_config')) }; } catch { return { ...DEFAULT_CONFIG }; }
+    }
+    function saveConfig(update) {
+      const cfg = { ...getConfig(), ...update };
+      localStorage.setItem('aura_config', JSON.stringify(cfg));
+      return cfg;
+    }
+
+    // ───── DOM ─────
+    const chatInput = document.getElementById('chat-input');
+    const chatHistory = document.getElementById('chat-history');
+    const heroHeading = document.getElementById('hero-heading');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const toast = document.getElementById('toast');
+    const btnSend = document.getElementById('btn-send');
+    const btnModel = document.getElementById('btn-model');
+    const modelDropdown = document.getElementById('model-dropdown');
+    const modelList = document.getElementById('model-list');
+    const currentModelEl = document.getElementById('current-model');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const footerInfo = document.getElementById('footer-info');
+
+    let conversationHistory = [];
+    let isStreaming = false;
+
+    // ───── Toast ─────
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.remove('opacity-0', 'translate-y-4');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-4'); toast.classList.remove('opacity-100', 'translate-y-0'); }, 3000);
+    }
+
+    // ───── Connection Check ─────
+    async function checkConnection() {
+      const cfg = getConfig();
+      statusDot.className = 'status-dot status-checking';
+      statusText.textContent = 'Checking...';
+      try {
+        let url, ok = false, models = [];
+        if (cfg.format === 'ollama') {
+          url = `${cfg.endpoint}/api/tags`;
+          const res = await fetch(url);
+          if (res.ok) { const data = await res.json(); models = (data.models || []).map(m => m.name); ok = true; }
+        } else {
+          url = `${cfg.endpoint}/v1/models`;
+          const res = await fetch(url);
+          if (res.ok) { const data = await res.json(); models = (data.data || []).map(m => m.id); ok = true; }
+        }
+        if (ok) {
+          statusDot.className = 'status-dot status-connected';
+          statusText.textContent = 'Connected';
+          populateModels(models);
+          if (!cfg.model && models.length) saveConfig({ model: models[0] });
+          const c = getConfig();
+          currentModelEl.textContent = c.model || 'Select model';
+          footerInfo.textContent = c.model ? `Running ${c.model} on your local server` : 'Connected — select a model';
+          btnSend.disabled = false;
+        } else { throw new Error('Bad response'); }
+      } catch (e) {
+        statusDot.className = 'status-dot status-disconnected';
+        statusText.textContent = 'Disconnected';
+        currentModelEl.textContent = 'No connection';
+        footerInfo.textContent = 'Not connected — check Settings';
+        btnSend.disabled = true;
+        populateModels([]);
+      }
+    }
+
+    function populateModels(models) {
+      modelList.innerHTML = '';
+      if (!models.length) {
+        modelList.innerHTML = '<p class="text-xs text-gray-500 px-3 py-2">No models found</p>';
+        return;
+      }
+      const cfg = getConfig();
+      models.forEach(name => {
+        const btn = document.createElement('button');
+        btn.className = `w-full text-left px-3 py-2 rounded-xl text-sm transition-colors ${name === cfg.model ? 'text-lavender-400 bg-lavender-400/10' : 'text-gray-300 hover:bg-white/5 hover:text-white'}`;
+        btn.textContent = name;
+        btn.addEventListener('click', () => {
+          saveConfig({ model: name });
+          currentModelEl.textContent = name;
+          footerInfo.textContent = `Running ${name} on your local server`;
+          modelDropdown.classList.add('hidden');
+          checkConnection();
+        });
+        modelList.appendChild(btn);
+      });
+    }
+
+    // ───── Model Dropdown ─────
+    btnModel.addEventListener('click', () => { modelDropdown.classList.toggle('hidden'); });
+    document.addEventListener('click', (e) => { if (!btnModel.contains(e.target) && !modelDropdown.contains(e.target)) modelDropdown.classList.add('hidden'); });
+
+    // ───── Connection badge click → reconnect ─────
+    document.getElementById('connection-badge').addEventListener('click', () => { showToast('🔄 Reconnecting...'); checkConnection(); });
+
+    // ───── Markdown-lite renderer ─────
+    function renderMarkdown(text) {
+      let html = text
+        .replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => `<pre><code>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`)
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong class="text-white">$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br/>');
+      return html;
+    }
+
+    // ───── Send Message ─────
+    async function sendMessage() {
+      const text = chatInput.value.trim();
+      if (!text || isStreaming) return;
+
+      const cfg = getConfig();
+      if (!cfg.model) { showToast('⚠️ Select a model first'); return; }
+
+      // Switch to chat view
+      heroHeading.classList.add('hidden');
+      chatHistory.classList.remove('hidden');
+
+      // Add user bubble
+      const userDiv = document.createElement('div');
+      userDiv.className = 'flex justify-end';
+      userDiv.innerHTML = `<div class="max-w-[80%] px-6 py-4 message-user border border-white/10"><p class="text-sm leading-relaxed">${text.replace(/</g, '&lt;')}</p></div>`;
+      chatHistory.appendChild(userDiv);
+      chatInput.value = '';
+      btnSend.disabled = true;
+
+      // Track conversation
+      conversationHistory.push({ role: 'user', content: text });
+      if (!cfg.contextRetention) conversationHistory = [conversationHistory[conversationHistory.length - 1]];
+
+      // Show typing
+      typingIndicator.classList.remove('hidden');
+      chatHistory.appendChild(typingIndicator);
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+
+      // Create AI bubble
+      const aiDiv = document.createElement('div');
+      aiDiv.className = 'flex justify-start';
+      const aiBubble = document.createElement('div');
+      aiBubble.className = 'max-w-[80%] px-6 py-4 message-ai';
+      const aiP = document.createElement('div');
+      aiP.className = 'text-sm leading-relaxed text-gray-300';
+      aiBubble.appendChild(aiP);
+      aiDiv.appendChild(aiBubble);
+
+      isStreaming = true;
+      let fullResponse = '';
+
+      try {
+        if (cfg.format === 'ollama') {
+          // ─── Ollama streaming ───
+          const res = await fetch(`${cfg.endpoint}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: cfg.model, messages: conversationHistory, options: { temperature: cfg.temperature } })
+          });
+          if (!res.ok) throw new Error(`Server returned ${res.status}`);
+
+          typingIndicator.classList.add('hidden');
+          chatHistory.appendChild(aiDiv);
+
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            for (const line of chunk.split('\n').filter(Boolean)) {
+              try {
+                const json = JSON.parse(line);
+                if (json.message?.content) {
+                  fullResponse += json.message.content;
+                  aiP.innerHTML = renderMarkdown(fullResponse);
+                  chatHistory.scrollTop = chatHistory.scrollHeight;
+                }
+              } catch { }
+            }
+          }
+        } else {
+          // ─── OpenAI-compatible streaming ───
+          const res = await fetch(`${cfg.endpoint}/v1/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: cfg.model, messages: conversationHistory, temperature: cfg.temperature, stream: true })
+          });
+          if (!res.ok) throw new Error(`Server returned ${res.status}`);
+
+          typingIndicator.classList.add('hidden');
+          chatHistory.appendChild(aiDiv);
+
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            for (const line of chunk.split('\n').filter(Boolean)) {
+              if (line.startsWith('data: ')) {
+                const payload = line.slice(6);
+                if (payload === '[DONE]') break;
+                try {
+                  const json = JSON.parse(payload);
+                  const token = json.choices?.[0]?.delta?.content;
+                  if (token) {
+                    fullResponse += token;
+                    aiP.innerHTML = renderMarkdown(fullResponse);
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                  }
+                } catch { }
+              }
+            }
+          }
+        }
+
+        conversationHistory.push({ role: 'assistant', content: fullResponse });
+      } catch (err) {
+        typingIndicator.classList.add('hidden');
+        const errDiv = document.createElement('div');
+        errDiv.className = 'flex justify-start';
+        errDiv.innerHTML = `<div class="max-w-[80%] px-6 py-4 message-ai border border-red-500/20"><p class="text-sm text-red-400">⚠️ Could not reach your LLM: ${err.message}</p><p class="text-xs text-gray-500 mt-2">Check that your server is running and the endpoint is correct in <a href="settings.html" class="text-lavender-400 underline">Settings</a>.</p></div>`;
+        chatHistory.appendChild(errDiv);
+      }
+
+      isStreaming = false;
+      btnSend.disabled = false;
+      chatInput.focus();
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    // ───── Event Listeners ─────
+    chatInput.addEventListener('input', () => { btnSend.disabled = !chatInput.value.trim() || isStreaming; });
+    chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+    btnSend.addEventListener('click', sendMessage);
+
+    // Suggestion chips
+    document.querySelectorAll('.suggestion-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        chatInput.value = chip.textContent.replace(/"/g, '');
+        btnSend.disabled = false;
+        chatInput.focus();
+      });
+    });
+
+    // New chat
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      conversationHistory = [];
+      chatHistory.innerHTML = '';
+      chatHistory.classList.add('hidden');
+      heroHeading.classList.remove('hidden');
+      showToast('🗑️ Chat cleared');
+    });
+
+    // ───── Init ─────
+    checkConnection();
+  </script>
+</body>
+
+</html>

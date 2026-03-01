@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Aura AI - Liquid Glass Interface</title>
+<!-- BEGIN: Scripts and Stylesheets -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            lavender: {
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+            },
+            glass: {
+              DEFAULT: 'rgba(255, 255, 255, 0.05)',
+              border: 'rgba(255, 255, 255, 0.1)',
+            }
+          },
+          backdropBlur: {
+            'xl': '20px',
+            '2xl': '40px',
+          }
+        }
+      }
+    }
+  </script>
+<!-- END: Scripts and Stylesheets -->
+<!-- BEGIN: Custom CSS -->
+<style data-purpose="liquid-glass-effects">
+    body {
+      background-color: #0a0a0a;
+      background: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #050505 100%);
+      color: #e5e7eb;
+      overflow: hidden;
+    }
+
+    .liquid-glass {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    }
+
+    .message-user {
+      background: rgba(45, 45, 45, 0.4);
+      backdrop-filter: blur(12px);
+      border-radius: 1.5rem 1.5rem 0.25rem 1.5rem;
+    }
+
+    .message-ai {
+      background: #000000;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      border-radius: 1.5rem 1.5rem 1.5rem 0.25rem;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .lavender-glow {
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+    }
+
+    /* Animation for typing indicator */
+    @keyframes fade {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
+    }
+    .dot {
+      animation: fade 1.4s infinite ease-in-out;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    /* Custom scrollbar */
+    .chat-container::-webkit-scrollbar {
+      width: 4px;
+    }
+    .chat-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .chat-container::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+  </style>
+<!-- END: Custom CSS -->
+</head>
+<body class="h-full flex flex-col font-sans antialiased">
+<!-- BEGIN: Navigation Header -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-8 py-6">
+<div class="flex items-center space-x-3" data-purpose="branding">
+<div class="w-8 h-8 rounded-full bg-gradient-to-tr from-lavender-500 to-indigo-600 blur-[2px]"></div>
+<span class="text-xl font-medium tracking-tight">Aura</span>
+</div>
+<nav class="hidden md:flex space-x-8 text-sm font-light text-gray-400">
+<a class="hover:text-white transition-colors" href="#">Features</a>
+<a class="hover:text-white transition-colors" href="#">Docs</a>
+<a class="hover:text-white transition-colors" href="#">Pricing</a>
+</nav>
+<div class="flex items-center space-x-4">
+<button class="px-5 py-2 rounded-full liquid-glass text-sm border-white/5 hover:bg-white/10 transition-all">Sign In</button>
+</div>
+</header>
+<!-- END: Navigation Header -->
+<!-- BEGIN: Main Hero / Chat Interface -->
+<main class="flex-grow flex flex-col relative pt-24 pb-32 max-w-5xl mx-auto w-full px-4 h-full">
+<!-- Hero Text (Transitions to small as chat fills) -->
+<div class="mb-12 text-center transition-all duration-700" data-purpose="hero-section" id="hero-heading">
+<h1 class="text-5xl md:text-7xl font-semibold bg-gradient-to-b from-white to-gray-500 bg-clip-text text-transparent mb-4">
+        Design at the speed of thought.
+      </h1>
+<p class="text-gray-400 text-lg max-w-xl mx-auto">
+        Your high-performance AI companion for creative liquid engineering and visual logic.
+      </p>
+</div>
+<!-- Chat Message Container -->
+<div class="chat-container flex-grow overflow-y-auto mb-6 flex flex-col space-y-6 px-4" data-purpose="chat-history">
+<!-- User Message -->
+<div class="flex justify-end" data-purpose="user-message">
+<div class="max-w-[80%] px-6 py-4 message-user border border-white/10">
+<p class="text-sm leading-relaxed">Can you help me visualize the liquid glass interface design for my new dashboard?</p>
+</div>
+</div>
+<!-- AI Message -->
+<div class="flex justify-start" data-purpose="ai-message">
+<div class="max-w-[80%] px-6 py-4 message-ai">
+<p class="text-sm leading-relaxed text-gray-300">
+            Absolutely. The liquid glass aesthetic relies on three pillars: high-refraction blurring, subtle inner shadows for depth, and translucent bordering. Here's a starting point using deep charcoal layers with lavender accents.
+          </p>
+<div class="mt-4 grid grid-cols-2 gap-3" data-purpose="image-preview">
+<div class="rounded-xl overflow-hidden aspect-video border border-white/10">
+<img alt="Reference interface" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3I6Bh-a-PGbqF-JePCSSGW9_3EGLAa2G97SG_YK8veGw9BtKvCVk1C35tREPIkZ49fEZj9WRPzO_puXx5qvGYXrY4hqS4Uu9brDQIQTyfylk1orY-_uF7dTt5RbWw7rPt-N9uww0fuQANcE8BnKrFDZI5JD9oxCcYOCwKAsQ-Jx7MUH9AP5o2fvcwS3XjnUdiDt7MRdRLdXfMk3gRGAC12A6FKCo-iszYZTJtE5R-5TPfRBpAty5GVaOiPdFcOlfMGkS1K0aKf6Ju"/>
+</div>
+<div class="rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+<span class="text-xs text-gray-500">Generating Canvas...</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Typing Indicator -->
+<div class="flex justify-start items-center space-x-2 px-2" data-purpose="typing-indicator">
+<div class="flex space-x-1 py-3 px-4 rounded-full liquid-glass border-white/5">
+<div class="w-1.5 h-1.5 bg-lavender-400 rounded-full dot"></div>
+<div class="w-1.5 h-1.5 bg-lavender-400 rounded-full dot"></div>
+<div class="w-1.5 h-1.5 bg-lavender-400 rounded-full dot"></div>
+</div>
+</div>
+</div>
+</main>
+<!-- END: Main Hero / Chat Interface -->
+<!-- BEGIN: Fixed Bottom Input Bar -->
+<footer class="fixed bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black via-black/80 to-transparent">
+<div class="max-w-4xl mx-auto relative group">
+<!-- Input Container with Glass Effects -->
+<div class="liquid-glass rounded-3xl p-3 flex items-center gap-3 transition-all duration-300 group-focus-within:border-lavender-500/30 group-focus-within:ring-1 ring-lavender-500/20 shadow-2xl" data-purpose="search-container">
+<!-- Add Icon Button -->
+<button class="flex items-center justify-center w-11 h-11 rounded-full hover:bg-white/5 text-gray-400 transition-colors">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<!-- Main Input -->
+<input class="flex-grow bg-transparent border-none focus:ring-0 text-white placeholder-gray-500 text-base" data-purpose="chat-input" placeholder="Type your prompt..." type="text"/>
+<!-- Action Buttons -->
+<div class="flex items-center space-x-2 pr-1">
+<button class="hidden sm:flex items-center px-4 py-2 rounded-2xl liquid-glass text-gray-300 text-sm hover:text-white transition-colors border-white/5">
+<svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+            Analyze
+          </button>
+<button class="flex items-center justify-center px-6 py-2 bg-lavender-600 hover:bg-lavender-500 text-white rounded-2xl font-medium transition-all lavender-glow" data-purpose="submit-button">
+            Plus
+            <svg class="h-4 w-4 ml-2" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</div>
+<!-- Subtle Helper Text -->
+<p class="text-center text-[10px] text-gray-600 mt-4 tracking-widest uppercase">
+        Powered by Liquid Intelligence Engine v2.0
+      </p>
+</div>
+</footer>
+<!-- END: Fixed Bottom Input Bar -->
+<!-- BEGIN: Interactive Scripts -->
+<script data-purpose="interface-interactivity">
+    // Minimal script to handle input focus styles or interaction
+    const chatInput = document.querySelector('[data-purpose="chat-input"]');
+    const heroHeading = document.getElementById('hero-heading');
+
+    chatInput.addEventListener('focus', () => {
+      // In a real app, this might trigger the transition from hero to full chat
+      heroHeading.classList.add('opacity-40', 'scale-95');
+    });
+
+    chatInput.addEventListener('blur', () => {
+      heroHeading.classList.remove('opacity-40', 'scale-95');
+    });
+  </script>
+<!-- END: Interactive Scripts -->
+</body></html>

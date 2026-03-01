@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html class="h-full" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Setup Guide — Aura</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { lavender: { 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed' }, glass: { DEFAULT: 'rgba(255,255,255,0.05)' } },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: radial-gradient(ellipse at 50% 0%, rgba(139, 92, 246, 0.06) 0%, transparent 50%), radial-gradient(circle at 50% 50%, #1a1a1a 0%, #050505 100%);
+            color: #e5e7eb;
+        }
+
+        .liquid-glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+        }
+
+        .page-enter {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .code-header {
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-body {
+            padding: 1.25rem;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: #d4d4d8;
+        }
+
+        .sidebar-link {
+            display: block;
+            padding: 0.5rem 1rem;
+            border-left: 2px solid transparent;
+            font-size: 0.875rem;
+            color: #71717a;
+            transition: all 0.2s;
+        }
+
+        .sidebar-link:hover {
+            color: #e5e7eb;
+        }
+
+        .sidebar-link.active {
+            border-left-color: #8b5cf6;
+            color: #a78bfa;
+            background: rgba(139, 92, 246, 0.05);
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+
+        .callout {
+            background: rgba(139, 92, 246, 0.05);
+            border: 1px solid rgba(139, 92, 246, 0.15);
+            border-radius: 1rem;
+            padding: 1.25rem;
+        }
+
+        .callout-warn {
+            background: rgba(251, 191, 36, 0.05);
+            border-color: rgba(251, 191, 36, 0.15);
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        h2 {
+            scroll-margin-top: 6rem;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen font-sans antialiased page-enter">
+    <header
+        class="fixed top-0 w-full z-50 flex justify-between items-center px-8 py-6 bg-gradient-to-b from-black/80 to-transparent">
+        <a href="index.html" class="flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-lavender-500 to-indigo-600 blur-[2px]"></div>
+            <span class="text-xl font-medium tracking-tight">Aura</span>
+        </a>
+        <nav class="hidden md:flex space-x-8 text-sm font-light text-gray-400">
+            <a class="hover:text-white transition-colors" href="features.html">Features</a>
+            <a class="text-white font-medium" href="docs.html">Docs</a>
+        </nav>
+        <div class="flex items-center space-x-4">
+            <a href="settings.html"
+                class="p-2 hover:bg-white/5 rounded-full transition-colors text-gray-400 hover:text-white"><svg
+                    class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg></a>
+        </div>
+    </header>
+
+    <div class="flex pt-24 max-w-7xl mx-auto">
+        <!-- Sidebar -->
+        <aside class="hidden lg:block w-56 shrink-0 sticky top-24 h-[calc(100vh-6rem)] overflow-y-auto pr-4 pl-6">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-lavender-400 mb-4">Getting Started</p>
+            <a class="sidebar-link active" href="#overview">Overview</a>
+            <a class="sidebar-link" href="#install-ollama">Install Ollama</a>
+            <a class="sidebar-link" href="#pull-model">Pull a Model</a>
+            <a class="sidebar-link" href="#connect">Connect Aura</a>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-lavender-400 mt-8 mb-4">Backends</p>
+            <a class="sidebar-link" href="#ollama">Ollama</a>
+            <a class="sidebar-link" href="#localai">LocalAI</a>
+            <a class="sidebar-link" href="#lmstudio">LM Studio</a>
+            <a class="sidebar-link" href="#llamacpp">llama.cpp</a>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-lavender-400 mt-8 mb-4">Troubleshooting</p>
+            <a class="sidebar-link" href="#cors">CORS Issues</a>
+            <a class="sidebar-link" href="#network">Network Access</a>
+            <a class="sidebar-link" href="#faq">FAQ</a>
+        </aside>
+
+        <!-- Content -->
+        <main class="flex-1 px-6 pb-20 max-w-3xl">
+            <h1 class="text-4xl font-semibold text-white mb-4" id="overview">Self-Hosting Setup Guide</h1>
+            <p class="text-gray-400 mb-8 text-base leading-relaxed">Get Aura connected to the LLM running on your NAS in
+                under 5 minutes.</p>
+
+            <div class="callout flex items-start gap-3 mb-10">
+                <svg class="h-5 w-5 text-lavender-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clip-rule="evenodd" />
+                </svg>
+                <div>
+                    <p class="text-sm text-white font-medium">What you'll need</p>
+                    <p class="text-sm text-gray-400 mt-1">A NAS or server on your local network capable of running an
+                        LLM backend (Ollama recommended). Most modern NAS units with Docker support will work.</p>
+                </div>
+            </div>
+
+            <!-- Install Ollama -->
+            <h2 class="text-2xl font-semibold text-white mt-12 mb-4" id="install-ollama">1. Install Ollama on Your NAS
+            </h2>
+            <p class="text-gray-400 text-sm leading-relaxed mb-4">The easiest option is running Ollama via Docker on
+                your NAS:</p>
+            <div class="code-block mb-6">
+                <div class="code-header"><span class="text-xs text-gray-500">Docker</span><button
+                        class="copy-btn text-xs text-gray-500 hover:text-white transition-colors"
+                        data-code="docker run -d --name ollama -p 11434:11434 -v ollama:/root/.ollama --restart unless-stopped ollama/ollama">Copy</button>
+                </div>
+                <div class="code-body">docker run -d --name ollama \<br /> -p 11434:11434 \<br /> -v
+                    ollama:/root/.ollama \<br /> --restart unless-stopped \<br /> ollama/ollama</div>
+            </div>
+            <p class="text-gray-400 text-sm leading-relaxed mb-4">If your NAS has an NVIDIA GPU, add <code
+                    class="bg-white/5 px-1.5 py-0.5 rounded text-lavender-400 text-xs">--gpus all</code> for hardware
+                acceleration.</p>
+
+            <!-- Pull a Model -->
+            <h2 class="text-2xl font-semibold text-white mt-12 mb-4" id="pull-model">2. Pull a Model</h2>
+            <p class="text-gray-400 text-sm leading-relaxed mb-4">Download a model to your NAS. Here are some good
+                starting points:</p>
+            <div class="code-block mb-6">
+                <div class="code-header"><span class="text-xs text-gray-500">Terminal</span><button
+                        class="copy-btn text-xs text-gray-500 hover:text-white transition-colors"
+                        data-code="docker exec -it ollama ollama pull llama3.2">Copy</button></div>
+                <div class="code-body"><span class="text-gray-500"># Lightweight & fast (3B params)</span><br />docker
+                    exec -it ollama ollama pull llama3.2<br /><br /><span class="text-gray-500"># Powerful general
+                        purpose (8B params)</span><br />docker exec -it ollama ollama pull llama3.1<br /><br /><span
+                        class="text-gray-500"># Great for coding (7B params)</span><br />docker exec -it ollama ollama
+                    pull deepseek-coder-v2<br /><br /><span class="text-gray-500"># Compact & capable (3.8B
+                        params)</span><br />docker exec -it ollama ollama pull phi3</div>
+            </div>
+
+            <!-- Connect Aura -->
+            <h2 class="text-2xl font-semibold text-white mt-12 mb-4" id="connect">3. Connect Aura</h2>
+            <p class="text-gray-400 text-sm leading-relaxed mb-4">Open <a href="settings.html"
+                    class="text-lavender-400 hover:text-lavender-500 underline">Settings</a> and configure:</p>
+            <div class="space-y-3 mb-6">
+                <div class="flex items-start gap-3">
+                    <div
+                        class="w-6 h-6 rounded-full bg-lavender-600/20 border border-lavender-400/20 flex items-center justify-center shrink-0 text-xs text-lavender-400 font-bold">
+                        1</div>
+                    <p class="text-sm text-gray-300"><strong class="text-white">API Endpoint</strong> — Set to your NAS
+                        IP, e.g. <code
+                            class="bg-white/5 px-1.5 py-0.5 rounded text-lavender-400 text-xs">http://192.168.1.100:11434</code>
+                    </p>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div
+                        class="w-6 h-6 rounded-full bg-lavender-600/20 border border-lavender-400/20 flex items-center justify-center shrink-0 text-xs text-lavender-400 font-bold">
+                        2</div>
+                    <p class="text-sm text-gray-300"><strong class="text-white">API Format</strong> — Select "Ollama"
+                    </p>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div
+                        class="w-6 h-6 rounded-full bg-lavender-600/20 border border-lavender-400/20 flex items-center justify-center shrink-0 text-xs text-lavender-400 font-bold">
+                        3</div>
+                    <p class="text-sm text-gray-300"><strong class="text-white">Test Connection</strong> — Click to
+                        verify, then select your model</p>
+                </div>
+            </div>
+            <p class="text-gray-400 text-sm leading-relaxed">That's it! Head to the <a href="index.html"
+                    class="text-lavender-400 hover:text-lavender-500 underline">chat</a> and start talking to your AI.
+            </p>
+
+            <!-- Backends -->
+            <h2 class="text-2xl font-semibold text-white mt-16 mb-4" id="ollama">Ollama</h2>
+            <p class="text-gray-400 text-sm leading-relaxed mb-4">The recommended backend. REST API on port 11434. Works
+                out of the box with Docker on most NAS systems (Synology, QNAP, TrueNAS, Unraid, etc).</p>
+            <div class="code-block mb-6">
+                <div class="code-header"><span class="text-xs text-gray-500">Environment</span></div>
+                <div class="code-body"><span class="text-gray-500"># Allow connections from any host on your
+                        LAN</span><br />OLLAMA_HOST=0.0.0.0<br />OLLAMA_ORIGINS=*</div>
+            </div>
+
+            <h2 class="text-2xl font-semibold text-white mt-12 mb-4" id="localai">LocalAI</h2>
+            <p class="text-gray-400 text-sm leading-relaxed mb-4">OpenAI-compatible API. In Aura settings, select
+                "OpenAI-compatible" format. Default port: 8080.</p>
+
+            <h2 class="text-2xl font-semibold text-white mt-12 mb-4" id="lmstudio">LM Studio</h2>
+            <p class="text-gray-400 text-sm leading-relaxed mb-4">Start the local server in LM Studio (port 1234 by
+                default). Select "OpenAI-compatible" format in Aura and set endpoint to <code
+                    class="bg-white/5 px-1.5 py-0.5 rounded text-lavender-400 text-xs">http://your-ip:1234</code>.</p>
+
+            <h2 class="text-2xl font-semibold text-white mt-12 mb-4" id="llamacpp">llama.cpp</h2>
+            <p class="text-gray-400 text-sm leading-relaxed mb-4">Run the server with <code
+                    class="bg-white/5 px-1.5 py-0.5 rounded text-lavender-400 text-xs">llama-server --host 0.0.0.0 --port 8080</code>.
+                Select "OpenAI-compatible" format in Aura.</p>
+
+            <!-- Troubleshooting -->
+            <h2 class="text-2xl font-semibold text-white mt-16 mb-4" id="cors">CORS Issues</h2>
+            <p class="text-gray-400 text-sm leading-relaxed mb-4">If Aura can't connect, your LLM server may be blocking
+                cross-origin requests. For Ollama, set this environment variable:</p>
+            <div class="code-block mb-6">
+                <div class="code-header"><span class="text-xs text-gray-500">Fix</span><button
+                        class="copy-btn text-xs text-gray-500 hover:text-white transition-colors"
+                        data-code="OLLAMA_ORIGINS=*">Copy</button></div>
+                <div class="code-body">OLLAMA_ORIGINS=*</div>
+            </div>
+            <p class="text-gray-400 text-sm leading-relaxed mb-4">For Docker, pass it as: <code
+                    class="bg-white/5 px-1.5 py-0.5 rounded text-lavender-400 text-xs">-e OLLAMA_ORIGINS=*</code></p>
+
+            <h2 class="text-2xl font-semibold text-white mt-12 mb-4" id="network">Network Access</h2>
+            <div class="callout callout-warn flex items-start gap-3 mb-6">
+                <svg class="h-5 w-5 text-amber-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                        clip-rule="evenodd" />
+                </svg>
+                <div>
+                    <p class="text-sm text-white font-medium">Firewall check</p>
+                    <p class="text-sm text-gray-400 mt-1">Make sure the port (e.g. 11434) is open on your NAS firewall
+                        and accessible from the machine running Aura.</p>
+                </div>
+            </div>
+
+            <h2 class="text-2xl font-semibold text-white mt-12 mb-6" id="faq">FAQ</h2>
+            <div class="space-y-4">
+                <details class="group liquid-glass rounded-2xl">
+                    <summary
+                        class="cursor-pointer px-6 py-4 text-sm font-medium text-white flex items-center justify-between">
+                        Can I use this from another device on my network?<svg
+                            class="h-4 w-4 text-gray-400 group-open:rotate-180 transition-transform" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg></summary>
+                    <p class="px-6 pb-4 text-sm text-gray-400">Yes! Just serve the Aura HTML files from any web server
+                        on your network (even a simple Python HTTP server). All config is stored in your browser's
+                        localStorage.</p>
+                </details>
+                <details class="group liquid-glass rounded-2xl">
+                    <summary
+                        class="cursor-pointer px-6 py-4 text-sm font-medium text-white flex items-center justify-between">
+                        Which models run well on a NAS?<svg
+                            class="h-4 w-4 text-gray-400 group-open:rotate-180 transition-transform" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg></summary>
+                    <p class="px-6 pb-4 text-sm text-gray-400">It depends on your RAM. 8GB: Phi-3 (3.8B), Llama 3.2
+                        (3B). 16GB: Llama 3.1 (8B), Mistral (7B). 32GB+: Mixtral (47B), Llama 3.1 (70B quantized).</p>
+                </details>
+                <details class="group liquid-glass rounded-2xl">
+                    <summary
+                        class="cursor-pointer px-6 py-4 text-sm font-medium text-white flex items-center justify-between">
+                        Does any data leave my network?<svg
+                            class="h-4 w-4 text-gray-400 group-open:rotate-180 transition-transform" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg></summary>
+                    <p class="px-6 pb-4 text-sm text-gray-400">No. Aura is a static HTML/JS app. Chat messages go
+                        directly from your browser to your LLM server. Nothing is sent to any external service.</p>
+                </details>
+                <details class="group liquid-glass rounded-2xl">
+                    <summary
+                        class="cursor-pointer px-6 py-4 text-sm font-medium text-white flex items-center justify-between">
+                        Can I use a GPU on my NAS?<svg
+                            class="h-4 w-4 text-gray-400 group-open:rotate-180 transition-transform" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg></summary>
+                    <p class="px-6 pb-4 text-sm text-gray-400">If your NAS has an NVIDIA GPU, add <code
+                            class="bg-white/5 px-1.5 py-0.5 rounded text-lavender-400 text-xs">--gpus all</code> to the
+                        Docker run command. AMD GPUs work with the ROCm version of Ollama.</p>
+                </details>
+            </div>
+        </main>
+    </div>
+
+    <footer class="border-t border-white/5 py-8 text-center mt-12">
+        <p class="text-[10px] text-gray-600 tracking-widest uppercase">Self-hosted AI portal — your data never leaves
+            your network</p>
+    </footer>
+
+    <script>
+        // Copy buttons
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const code = btn.dataset.code || btn.closest('.code-block').querySelector('.code-body').textContent;
+                navigator.clipboard.writeText(code).then(() => { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy'; }, 1500); });
+            });
+        });
+        // Scroll spy
+        const links = document.querySelectorAll('.sidebar-link');
+        const sections = document.querySelectorAll('h2[id]');
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    links.forEach(l => l.classList.remove('active'));
+                    const active = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);
+                    if (active) active.classList.add('active');
+                }
+            });
+        }, { rootMargin: '-20% 0px -70% 0px' });
+        sections.forEach(s => observer.observe(s));
+    </script>
+</body>
+
+</html>

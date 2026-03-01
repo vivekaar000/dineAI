@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Settings — Aura</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { lavender: { light: '#E0D7FF', DEFAULT: '#A78BFA', dark: '#7C3AED', 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed' }, glass: { dark: 'rgba(24,24,27,0.8)' } },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #09090b;
+        }
+
+        .glass-morphism {
+            background: rgba(24, 24, 27, 0.75);
+            backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+        }
+
+        .bg-blur-overlay {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+        }
+
+        .lavender-focus:focus {
+            outline: none;
+            border-color: #A78BFA !important;
+            box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.2);
+        }
+
+        input[type='range'] {
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        input[type='range']::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #A78BFA;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .page-enter {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .theme-btn {
+            transition: all 0.25s ease;
+        }
+
+        .theme-btn.active {
+            border-color: #A78BFA;
+            background: rgba(167, 139, 250, 0.05);
+        }
+
+        .theme-btn.active span {
+            color: #A78BFA;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-ok {
+            background: #4ade80;
+            box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+        }
+
+        .status-fail {
+            background: #f87171;
+            box-shadow: 0 0 6px rgba(248, 113, 113, 0.5);
+        }
+
+        .status-pending {
+            background: #fbbf24;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-[#09090b] font-sans text-zinc-200 antialiased overflow-hidden page-enter">
+    <!-- Background -->
+    <main class="fixed inset-0 z-0 flex flex-col p-8 opacity-50 grayscale-[0.2]">
+        <header class="flex items-center justify-between mb-12">
+            <div class="h-8 w-32 bg-zinc-800 rounded-lg"></div>
+            <div class="h-10 w-10 bg-zinc-800 rounded-full"></div>
+        </header>
+        <div class="flex-1 space-y-8 max-w-3xl mx-auto w-full">
+            <div class="flex gap-4">
+                <div class="h-10 w-10 shrink-0 bg-zinc-800 rounded-full"></div>
+                <div class="space-y-2 w-full">
+                    <div class="h-4 w-3/4 bg-zinc-800 rounded"></div>
+                    <div class="h-4 w-1/2 bg-zinc-800 rounded"></div>
+                </div>
+            </div>
+        </div>
+        <footer class="mt-auto max-w-3xl mx-auto w-full">
+            <div class="h-14 w-full bg-zinc-800 rounded-2xl border border-zinc-700"></div>
+        </footer>
+    </main>
+
+    <!-- Settings Modal -->
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-blur-overlay">
+        <section class="glass-morphism w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-[2.5rem] flex flex-col">
+            <header class="px-8 pt-8 pb-6 flex items-center justify-between border-b border-white/5">
+                <div>
+                    <h2 class="text-2xl font-semibold text-white tracking-tight">Settings</h2>
+                    <p class="text-zinc-400 text-sm mt-1">Configure your local AI connection</p>
+                </div>
+                <a href="index.html" class="p-2 hover:bg-white/5 rounded-full transition-colors"><svg
+                        class="text-zinc-400" fill="none" height="24" stroke="currentColor" stroke-linecap="round"
+                        stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg></a>
+            </header>
+
+            <div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-10">
+                <!-- Connection -->
+                <div class="space-y-5">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-lavender/70">Connection</h3>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-zinc-300">API Endpoint</label>
+                        <input id="cfg-endpoint"
+                            class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-zinc-200 lavender-focus transition-all text-sm font-mono"
+                            type="url" placeholder="http://192.168.1.100:11434" />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-zinc-300">API Format</label>
+                        <select id="cfg-format"
+                            class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-zinc-200 lavender-focus transition-all text-sm">
+                            <option value="ollama">Ollama</option>
+                            <option value="openai">OpenAI-compatible (LocalAI, LM Studio, llama.cpp)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-zinc-300">Model</label>
+                        <div class="flex gap-2">
+                            <select id="cfg-model"
+                                class="flex-1 bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-zinc-200 lavender-focus transition-all text-sm">
+                                <option value="">Connect to load models...</option>
+                            </select>
+                            <button id="btn-refresh-models"
+                                class="px-3 py-2.5 rounded-xl bg-white/5 border border-zinc-800 hover:bg-white/10 transition-all text-zinc-400 hover:text-white"
+                                title="Refresh model list">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <button id="btn-test"
+                        class="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-zinc-700 bg-white/5 hover:bg-white/10 text-sm font-medium text-zinc-300 hover:text-white transition-all">
+                        <div class="status-dot status-pending" id="test-dot"></div>
+                        <span id="test-label">Test Connection</span>
+                    </button>
+                </div>
+
+                <!-- Intelligence -->
+                <div class="space-y-6">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-lavender/70">Intelligence &amp; Response
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center"><label
+                                class="text-sm font-medium text-zinc-300">Temperature (Creativity)</label><span
+                                class="text-xs font-mono text-lavender bg-lavender/10 px-2 py-0.5 rounded"
+                                id="temp-value">0.7</span></div>
+                        <input class="w-full cursor-pointer" id="temp-range" max="1" min="0" step="0.1" type="range"
+                            value="0.7" />
+                        <div class="flex justify-between text-[10px] text-zinc-500 font-medium">
+                            <span>PRECISE</span><span>CREATIVE</span></div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-zinc-200">Context Retention</p>
+                            <p class="text-xs text-zinc-500">Remember previous messages in the conversation</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer"><input id="cfg-context" checked
+                                class="sr-only peer" type="checkbox" />
+                            <div
+                                class="w-11 h-6 bg-zinc-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-lavender">
+                            </div>
+                        </label>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-zinc-300">System Prompt</label>
+                        <textarea id="cfg-system"
+                            class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-2.5 text-zinc-200 lavender-focus transition-all text-sm h-24 resize-none"
+                            placeholder="Optional: Set a system prompt for your AI persona..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Interface -->
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-lavender/70">Interface</h3>
+                    <div class="grid grid-cols-3 gap-3" id="theme-grid">
+                        <button
+                            class="theme-btn active flex flex-col items-center gap-2 p-3 rounded-xl border border-lavender"
+                            data-theme="liquid-dark">
+                            <div
+                                class="h-8 w-full bg-zinc-900 rounded-md border border-white/10 flex items-center px-2">
+                                <div class="w-2 h-2 rounded-full bg-lavender"></div>
+                            </div><span class="text-[11px] font-medium text-lavender">Liquid Dark</span>
+                        </button>
+                        <button
+                            class="theme-btn flex flex-col items-center gap-2 p-3 rounded-xl border border-zinc-800 bg-white/5 hover:bg-white/10 transition-all"
+                            data-theme="crystal-light">
+                            <div class="h-8 w-full bg-white rounded-md border border-zinc-300 flex items-center px-2">
+                                <div class="w-2 h-2 rounded-full bg-zinc-400"></div>
+                            </div><span class="text-[11px] font-medium text-zinc-400">Crystal Light</span>
+                        </button>
+                        <button
+                            class="theme-btn flex flex-col items-center gap-2 p-3 rounded-xl border border-zinc-800 bg-white/5 hover:bg-white/10 transition-all"
+                            data-theme="deep-space">
+                            <div
+                                class="h-8 w-full bg-zinc-950 rounded-md border border-zinc-800 flex items-center px-2">
+                                <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                            </div><span class="text-[11px] font-medium text-zinc-400">Deep Space</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="px-8 py-6 bg-black/20 border-t border-white/5 flex items-center justify-end gap-4">
+                <a href="index.html"
+                    class="px-6 py-2.5 text-sm font-medium text-zinc-400 hover:text-white transition-colors">Discard</a>
+                <button id="btn-save"
+                    class="px-8 py-2.5 text-sm font-semibold bg-lavender text-zinc-950 rounded-xl hover:bg-lavender-light shadow-[0_0_20px_rgba(167,139,250,0.3)] transition-all active:scale-95">Save
+                    Changes</button>
+            </footer>
+        </section>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"
+        class="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl glass-morphism text-sm text-white opacity-0 pointer-events-none transition-all duration-300 translate-y-4 z-[60]">
+    </div>
+
+    <script>
+        // ─── Config ───
+        const DEFAULT_CONFIG = { endpoint: 'http://localhost:11434', format: 'ollama', model: '', temperature: 0.7, contextRetention: true, systemPrompt: '' };
+        function getConfig() { try { return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem('aura_config')) }; } catch { return { ...DEFAULT_CONFIG }; } }
+        function saveConfigAll(cfg) { localStorage.setItem('aura_config', JSON.stringify(cfg)); }
+
+        const cfgEndpoint = document.getElementById('cfg-endpoint');
+        const cfgFormat = document.getElementById('cfg-format');
+        const cfgModel = document.getElementById('cfg-model');
+        const cfgContext = document.getElementById('cfg-context');
+        const cfgSystem = document.getElementById('cfg-system');
+        const tempRange = document.getElementById('temp-range');
+        const tempValue = document.getElementById('temp-value');
+        const testDot = document.getElementById('test-dot');
+        const testLabel = document.getElementById('test-label');
+
+        // Load current config
+        const cfg = getConfig();
+        cfgEndpoint.value = cfg.endpoint;
+        cfgFormat.value = cfg.format;
+        cfgContext.checked = cfg.contextRetention;
+        cfgSystem.value = cfg.systemPrompt || '';
+        tempRange.value = cfg.temperature;
+        tempValue.textContent = cfg.temperature;
+
+        // Range slider
+        tempRange.addEventListener('input', (e) => { tempValue.textContent = e.target.value; });
+
+        // Toast
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.classList.remove('opacity-0', 'translate-y-4'); t.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => { t.classList.add('opacity-0', 'translate-y-4'); t.classList.remove('opacity-100', 'translate-y-0'); }, 2500);
+        }
+
+        // Fetch models
+        async function fetchModels() {
+            const endpoint = cfgEndpoint.value.replace(/\/+$/, '');
+            const format = cfgFormat.value;
+            cfgModel.innerHTML = '<option value="">Loading...</option>';
+            try {
+                let models = [];
+                if (format === 'ollama') {
+                    const res = await fetch(`${endpoint}/api/tags`);
+                    const data = await res.json();
+                    models = (data.models || []).map(m => m.name);
+                } else {
+                    const res = await fetch(`${endpoint}/v1/models`);
+                    const data = await res.json();
+                    models = (data.data || []).map(m => m.id);
+                }
+                cfgModel.innerHTML = models.length ? '' : '<option value="">No models found</option>';
+                models.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m; opt.textContent = m;
+                    if (m === cfg.model) opt.selected = true;
+                    cfgModel.appendChild(opt);
+                });
+                return models.length > 0;
+            } catch {
+                cfgModel.innerHTML = '<option value="">Connection failed</option>';
+                return false;
+            }
+        }
+
+        // Test connection
+        document.getElementById('btn-test').addEventListener('click', async () => {
+            testDot.className = 'status-dot status-pending'; testLabel.textContent = 'Testing...';
+            const ok = await fetchModels();
+            if (ok) { testDot.className = 'status-dot status-ok'; testLabel.textContent = 'Connected!'; }
+            else { testDot.className = 'status-dot status-fail'; testLabel.textContent = 'Failed'; }
+        });
+
+        // Refresh models
+        document.getElementById('btn-refresh-models').addEventListener('click', fetchModels);
+
+        // Try to load models on open
+        fetchModels();
+
+        // Theme
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.theme-btn').forEach(b => { b.classList.remove('active', 'border-lavender'); b.classList.add('border-zinc-800', 'bg-white/5'); b.querySelector('span').classList.remove('text-lavender'); b.querySelector('span').classList.add('text-zinc-400'); });
+                btn.classList.add('active', 'border-lavender'); btn.classList.remove('border-zinc-800', 'bg-white/5'); btn.querySelector('span').classList.add('text-lavender'); btn.querySelector('span').classList.remove('text-zinc-400');
+            });
+        });
+
+        // Save
+        document.getElementById('btn-save').addEventListener('click', () => {
+            saveConfigAll({
+                endpoint: cfgEndpoint.value.replace(/\/+$/, ''),
+                format: cfgFormat.value,
+                model: cfgModel.value,
+                temperature: parseFloat(tempRange.value),
+                contextRetention: cfgContext.checked,
+                systemPrompt: cfgSystem.value
+            });
+            showToast('✅ Settings saved');
+            setTimeout(() => { window.location.href = 'index.html'; }, 1200);
+        });
+
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.location.href = 'index.html'; });
+    </script>
+</body>
+
+</html>
