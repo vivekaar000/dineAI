@@ -180,7 +180,7 @@ export default function MapPage() {
         }
     }, [scores]);
 
-    // Search debounce
+    // Search debounce with fallback
     useEffect(() => {
         if (!searchQuery.trim()) {
             setSearchResults([]);
@@ -190,12 +190,32 @@ export default function MapPage() {
 
         const t = setTimeout(async () => {
             try {
+                // Try live Places search first
                 const results = await placesSearch(searchQuery);
-                setSearchResults(results);
-                setShowResults(true);
+                if (results && results.length > 0) {
+                    setSearchResults(results);
+                    setShowResults(true);
+                    return;
+                }
             } catch {
-                setSearchResults([]);
+                // Places API failed — fall through to DB search
             }
+
+            try {
+                // Fallback: search local DB
+                const { searchRestaurants } = await import("@/lib/api");
+                const dbResults = await searchRestaurants(searchQuery);
+                if (dbResults && dbResults.length > 0) {
+                    setSearchResults(dbResults);
+                    setShowResults(true);
+                    return;
+                }
+            } catch {
+                // DB search also failed
+            }
+
+            setSearchResults([]);
+            setShowResults(false);
         }, 400);
 
         return () => clearTimeout(t);

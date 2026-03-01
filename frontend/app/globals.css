@@ -439,7 +439,7 @@ body {
   top: calc(16px + var(--safe-top));
   left: 50%;
   transform: translateX(-50%);
-  z-index: 1000;
+  z-index: 1002;
   width: min(560px, calc(100vw - 32px));
 }
 
@@ -1260,6 +1260,12 @@ body {
 
 @media (max-width: 768px) {
 
+  /* Move search below brand badge on tablets */
+  .search-overlay {
+    top: calc(56px + var(--safe-top));
+    width: min(480px, calc(100vw - 32px));
+  }
+
   /* Bottom sheet takes more space on tablets */
   .bottom-sheet {
     max-height: 75vh;
@@ -1391,10 +1397,12 @@ body {
     height: 7px;
   }
 
-  /* Search overlay - full width */
+  /* Search overlay - full width, below brand badge */
   .search-overlay {
     width: calc(100vw - 24px);
-    top: calc(12px + var(--safe-top));
+    top: calc(56px + var(--safe-top));
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .search-bar {
@@ -1404,6 +1412,10 @@ body {
 
   .search-bar input {
     font-size: 14px;
+  }
+
+  .search-results {
+    max-height: 50vh;
   }
 
   /* Legend repositioning */
