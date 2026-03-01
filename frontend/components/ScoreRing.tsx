@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ScoreRingProps {
     score: number;
@@ -24,8 +24,9 @@ export default function ScoreRing({
     invert = false,
 }: ScoreRingProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const animRef = useRef<number>(0);
+    const [displayScore, setDisplayScore] = useState(0);
     const color = getScoreColor(score, invert);
-    const pct = score / 100;
     const cx = size / 2;
     const r = (size - 12) / 2;
 
@@ -35,25 +36,50 @@ export default function ScoreRing({
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
-        ctx.clearRect(0, 0, size, size);
+        // Animate the ring filling and counter
+        const duration = 1000;
+        const start = performance.now();
+        const targetPct = score / 100;
 
-        // Track
-        ctx.beginPath();
-        ctx.arc(cx, cx, r, 0, Math.PI * 2);
-        ctx.strokeStyle = "#222";
-        ctx.lineWidth = 8;
-        ctx.stroke();
+        const animate = (now: number) => {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease out cubic
+            const ease = 1 - Math.pow(1 - progress, 3);
+            const currentPct = targetPct * ease;
 
-        // Progress arc
-        const start = -Math.PI / 2;
-        const end = start + pct * Math.PI * 2;
-        ctx.beginPath();
-        ctx.arc(cx, cx, r, start, end);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 8;
-        ctx.lineCap = "round";
-        ctx.stroke();
-    }, [score, size, color, pct, cx, r]);
+            ctx.clearRect(0, 0, size, size);
+
+            // Track
+            ctx.beginPath();
+            ctx.arc(cx, cx, r, 0, Math.PI * 2);
+            ctx.strokeStyle = "#222";
+            ctx.lineWidth = 8;
+            ctx.stroke();
+
+            // Progress arc
+            const arcStart = -Math.PI / 2;
+            const arcEnd = arcStart + currentPct * Math.PI * 2;
+            if (currentPct > 0) {
+                ctx.beginPath();
+                ctx.arc(cx, cx, r, arcStart, arcEnd);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 8;
+                ctx.lineCap = "round";
+                ctx.stroke();
+            }
+
+            setDisplayScore(Math.round(score * ease));
+
+            if (progress < 1) {
+                animRef.current = requestAnimationFrame(animate);
+            }
+        };
+
+        animRef.current = requestAnimationFrame(animate);
+
+        return () => cancelAnimationFrame(animRef.current);
+    }, [score, size, color, cx, r]);
 
     return (
         <div
@@ -67,6 +93,7 @@ export default function ScoreRing({
                 background: "var(--bg-card)",
                 border: "1px solid var(--border)",
                 borderRadius: "var(--radius-md)",
+                transition: "all 0.3s ease",
             }}
         >
             <div style={{ position: "relative", width: size, height: size }}>
@@ -83,13 +110,14 @@ export default function ScoreRing({
                 >
                     <span
                         style={{
-                            fontSize: 20,
+                            fontSize: 22,
                             fontWeight: 700,
                             color,
                             letterSpacing: "-0.5px",
+                            transition: "color 0.3s ease",
                         }}
                     >
-                        {Math.round(score)}
+                        {displayScore}
                     </span>
                 </div>
             </div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-    title: "Aura.ai — Restaurant Intelligence",
+    title: "Anglap.ai — Restaurant Intelligence",
     description: "AI-powered Tourist Targeting Score — data-driven restaurant intelligence system",
 };
 

@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-  <title>Aura — Local AI Portal</title>
+  <title>Anglap — Local AI Portal</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
@@ -164,7 +164,7 @@
   <header class="fixed top-0 w-full z-50 flex justify-between items-center px-8 py-5">
     <a href="index.html" class="flex items-center space-x-3">
       <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-lavender-500 to-indigo-600 blur-[2px]"></div>
-      <span class="text-xl font-medium tracking-tight">Aura</span>
+      <span class="text-xl font-medium tracking-tight">Anglap</span>
     </a>
     <nav class="hidden md:flex space-x-8 text-sm font-light text-gray-400">
       <a class="hover:text-white transition-colors" href="features.html">Features</a>
@@ -292,11 +292,11 @@
     };
 
     function getConfig() {
-      try { return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem('aura_config')) }; } catch { return { ...DEFAULT_CONFIG }; }
+      try { return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem('anglap_config')) }; } catch { return { ...DEFAULT_CONFIG }; }
     }
     function saveConfig(update) {
       const cfg = { ...getConfig(), ...update };
-      localStorage.setItem('aura_config', JSON.stringify(cfg));
+      localStorage.setItem('anglap_config', JSON.stringify(cfg));
       return cfg;
     }
 

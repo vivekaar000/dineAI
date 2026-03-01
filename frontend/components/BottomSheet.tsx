@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, TrendingUp, BarChart3, CheckCircle } from "lucide-react";
 import ScoreRing from "./ScoreRing";
 import SignalRadar from "./SignalRadar";
 import SignalBar from "./SignalBar";
@@ -49,9 +49,20 @@ const WEIGHTS: Record<string, number> = {
     attraction_proximity: 0.15,
 };
 
+const TAB_ICONS = {
+    overview: TrendingUp,
+    signals: BarChart3,
+    validation: CheckCircle,
+};
+
 export default function BottomSheet({ analysis, loading, onClose }: Props) {
     const [tab, setTab] = useState<"overview" | "signals" | "validation">("overview");
     const isOpen = loading || !!analysis;
+
+    // Reset tab when opening new analysis
+    useEffect(() => {
+        if (analysis) setTab("overview");
+    }, [analysis?.restaurant?.name]);
 
     return (
         <div className={`bottom-sheet ${isOpen ? "open" : ""}`}>
@@ -59,16 +70,36 @@ export default function BottomSheet({ analysis, loading, onClose }: Props) {
 
             {loading && !analysis ? (
                 <div style={{ padding: "32px 24px", textAlign: "center" }}>
-                    <div style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-                        Running analysis…
+                    <div style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 16,
+                    }}>
+                        <div style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: "50%",
+                            border: "3px solid var(--border)",
+                            borderTopColor: "var(--accent)",
+                            animation: "spin 0.8s linear infinite",
+                        }} />
+                        <div style={{ color: "var(--text-secondary)", fontSize: 14, fontWeight: 500 }}>
+                            Analyzing restaurant…
+                        </div>
+                        <div style={{ color: "var(--text-muted)", fontSize: 12 }}>
+                            Evaluating 6 intelligence signals
+                        </div>
                     </div>
-                    <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "center" }}>
-                        {[1, 2, 3].map((i) => (
-                            <div
-                                key={i}
-                                className="shimmer"
-                                style={{ width: 60, height: 8, animationDelay: `${i * 0.15}s` }}
-                            />
+                    <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8, maxWidth: 280, margin: "20px auto 0" }}>
+                        {["Price intelligence", "Review analysis", "Tourist density"].map((label, i) => (
+                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <div
+                                    className="shimmer"
+                                    style={{ width: 100, height: 6, animationDelay: `${i * 0.2}s`, flexShrink: 0 }}
+                                />
+                                <span style={{ fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap" }}>{label}</span>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -85,7 +116,7 @@ export default function BottomSheet({ analysis, loading, onClose }: Props) {
                                     {analysis.restaurant.address && ` · ${analysis.restaurant.address.split(",")[0]}`}
                                 </div>
                             </div>
-                            <button className="sheet-close" onClick={onClose}>
+                            <button className="sheet-close" onClick={onClose} title="Close (Esc)">
                                 <X size={14} />
                             </button>
                         </div>
@@ -157,19 +188,25 @@ export default function BottomSheet({ analysis, loading, onClose }: Props) {
 
                         {/* Tabs */}
                         <div className="tab-bar">
-                            {(["overview", "signals", "validation"] as const).map((t) => (
-                                <button
-                                    key={t}
-                                    className={`tab ${tab === t ? "active" : ""}`}
-                                    onClick={() => setTab(t)}
-                                >
-                                    {t === "overview"
-                                        ? "Overview"
-                                        : t === "signals"
-                                            ? "Signals"
-                                            : "Validate"}
-                                </button>
-                            ))}
+                            {(["overview", "signals", "validation"] as const).map((t) => {
+                                const Icon = TAB_ICONS[t];
+                                return (
+                                    <button
+                                        key={t}
+                                        className={`tab ${tab === t ? "active" : ""}`}
+                                        onClick={() => setTab(t)}
+                                    >
+                                        <span style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
+                                            <Icon size={13} />
+                                            {t === "overview"
+                                                ? "Overview"
+                                                : t === "signals"
+                                                    ? "Signals"
+                                                    : "Validate"}
+                                        </span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -179,12 +216,16 @@ export default function BottomSheet({ analysis, loading, onClose }: Props) {
                             <>
                                 {/* Signal cards grid */}
                                 <div className="signal-grid">
-                                    {SIGNAL_KEYS.map((key) => {
+                                    {SIGNAL_KEYS.map((key, i) => {
                                         const sig = analysis.signals[key];
                                         const score = sig?.score ?? 0;
                                         const color = getBarFill(score);
                                         return (
-                                            <div className="signal-card" key={key}>
+                                            <div
+                                                className="signal-card"
+                                                key={key}
+                                                style={{ animationDelay: `${i * 0.06}s` }}
+                                            >
                                                 <div className="signal-label">{sig?.label}</div>
                                                 <div
                                                     className="signal-value"
@@ -225,13 +266,13 @@ export default function BottomSheet({ analysis, loading, onClose }: Props) {
                                 {/* Methodology note */}
                                 <div
                                     style={{
-                                        padding: "12px 14px",
+                                        padding: "14px 16px",
                                         background: "var(--bg-card)",
                                         border: "1px solid var(--border)",
                                         borderRadius: "var(--radius-sm)",
                                         fontSize: 12,
                                         color: "var(--text-secondary)",
-                                        lineHeight: 1.6,
+                                        lineHeight: 1.7,
                                     }}
                                 >
                                     <span style={{ color: "var(--accent)", fontWeight: 600 }}>How scores are calculated: </span>
@@ -255,6 +296,7 @@ export default function BottomSheet({ analysis, loading, onClose }: Props) {
                                                 border: "1px solid var(--border)",
                                                 borderRadius: "var(--radius-md)",
                                                 padding: "16px",
+                                                transition: "all 0.3s ease",
                                             }}
                                         >
                                             <div
