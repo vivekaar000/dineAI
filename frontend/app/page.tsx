@@ -23,19 +23,22 @@ function getMarkerColor(score?: number): string {
 }
 
 function makeIcon(color: string, selected = false) {
-    const size = selected ? 18 : 12;
+    const size = selected ? 20 : 14;
     const border = selected ? "white" : "rgba(255,255,255,0.4)";
     const pulse = selected
         ? `animation: marker-pulse 2s ease-in-out infinite;`
         : "";
+    const shadow = selected
+        ? `0 0 18px ${color}88, 0 0 8px ${color}66`
+        : `0 0 6px ${color}80`;
     return L.divIcon({
         className: "",
         html: `<div style="
       width:${size}px;height:${size}px;border-radius:50%;
-      background:${color};border:2px solid ${border};
-      box-shadow:0 0 ${selected ? "16px" : "6px"} ${color}80;
-      transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);cursor:pointer;
-      ${pulse}
+      background:${color};border:2.5px solid ${border};
+      box-shadow:${shadow};
+      transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      cursor:pointer;${pulse}
     "></div>`,
         iconSize: [size, size],
         iconAnchor: [size / 2, size / 2],
@@ -62,7 +65,6 @@ export default function MapPage() {
     useEffect(() => {
         if (!mapRef.current) return;
 
-        // Guard: if container already has a Leaflet map, remove it first
         const container = mapRef.current as HTMLDivElement & { _leaflet_id?: number };
         if (container._leaflet_id) {
             mapInstanceRef.current?.remove();
@@ -74,7 +76,6 @@ export default function MapPage() {
         import("leaflet").then((leaflet) => {
             L = leaflet.default;
 
-            // Fix missing marker icons
             delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
             L.Icon.Default.mergeOptions({
                 iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
@@ -83,13 +84,15 @@ export default function MapPage() {
             });
 
             const map = L.map(mapRef.current!, {
-                center: [36.1627, -86.7816], // Nashville downtown
+                center: [36.1627, -86.7816],
                 zoom: 14,
                 zoomControl: true,
                 attributionControl: true,
+                // Mobile-friendly options
+                touchZoom: true,
+                bounceAtZoomLimits: false,
             });
 
-            // Dark tile layer (CartoDB Dark Matter - No API Key Required)
             L.tileLayer(
                 "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
                 {
@@ -102,10 +105,9 @@ export default function MapPage() {
 
             mapInstanceRef.current = map;
 
-            // Reveal with stagger
+            // Staggered reveal
             setTimeout(() => setMapReady(true), 300);
 
-            // Load seed restaurants
             loadRestaurants(map, leaflet.default);
         });
 
@@ -149,13 +151,11 @@ export default function MapPage() {
             prev?.setIcon(makeIcon(getMarkerColor(prevScore), false));
         }
 
-        // Select this one
         selectedKeyRef.current = key;
         const marker = markersRef.current.get(key);
         marker?.setIcon(makeIcon(getMarkerColor(scores.get(key)), true));
 
-        // Pan to marker
-        mapInstanceRef.current?.panTo([r.lat, r.lng], { animate: true });
+        mapInstanceRef.current?.panTo([r.lat, r.lng], { animate: true, duration: 0.5 });
 
         setAnalysis(null);
         setAnalyzing(true);
@@ -172,7 +172,6 @@ export default function MapPage() {
 
             setAnalysis(result);
 
-            // Update marker color with score
             const score = result.tts_score;
             setScores((prev) => new Map(prev).set(key, score));
             marker?.setIcon(makeIcon(getMarkerColor(score), true));
@@ -191,7 +190,6 @@ export default function MapPage() {
 
         const t = setTimeout(async () => {
             try {
-                // Try live Places search first
                 const results = await placesSearch(searchQuery);
                 setSearchResults(results);
                 setShowResults(true);
@@ -227,19 +225,17 @@ export default function MapPage() {
         const map = mapInstanceRef.current;
         map.flyTo([r.lat, r.lng], 16, { animate: true, duration: 1.2 });
 
-        // If this place is already a marker, click it
         const key = r.place_id ? `places-${r.place_id}` : `db-${r.id}`;
         if (markersRef.current.has(key)) {
             handleMarkerClick(r, key);
             return;
         }
 
-        // Add temporary marker for the Places result
         import("leaflet").then(({ default: leaflet }) => {
             const marker = leaflet
                 .marker([r.lat, r.lng], { icon: makeIcon("#4fc3f7", true) })
                 .addTo(map)
-                .bindTooltip(r.name, { direction: "top" })
+                .bindTooltip(r.name, { direction: "top", className: "leaflet-tooltip-dark" })
                 .on("click", () => handleMarkerClick(r, key));
 
             markersRef.current.set(key, marker);
@@ -262,6 +258,12 @@ export default function MapPage() {
 
     return (
         <>
+            {/* Viewport meta for mobile */}
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+            <meta name="apple-mobile-web-app-capable" content="yes" />
+            <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+            <meta name="theme-color" content="#080808" />
+
             {/* Leaflet CSS */}
             <link
                 rel="stylesheet"
@@ -279,14 +281,10 @@ export default function MapPage() {
             />
 
             {/* Brand badge */}
-            <div
-                className={`brand-badge ${mapReady ? "brand-badge--visible" : ""}`}
-            >
+            <div className={`brand-badge ${mapReady ? "brand-badge--visible" : ""}`}>
                 <div className="brand-badge__dot" />
                 <span className="brand-badge__name">Anglap.ai</span>
-                <span className="brand-badge__tagline">
-                    Restaurant Intelligence
-                </span>
+                <span className="brand-badge__tagline">Restaurant Intelligence</span>
             </div>
 
             {/* Search overlay */}
@@ -303,11 +301,16 @@ export default function MapPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFocus={() => searchResults.length > 0 && setShowResults(true)}
+                        enterKeyHint="search"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck="false"
                     />
                     {searchQuery && (
                         <button
                             onClick={() => { setSearchQuery(""); setShowResults(false); setSearchResults([]); }}
                             className="search-clear-btn"
+                            aria-label="Clear search"
                         >
                             <X size={14} />
                         </button>
@@ -323,9 +326,9 @@ export default function MapPage() {
                                 onClick={() => handleSelectResult(r)}
                             >
                                 <MapPin size={14} color="#555" style={{ flexShrink: 0 }} />
-                                <div>
+                                <div style={{ minWidth: 0 }}>
                                     <div className="result-name">{r.name}</div>
-                                    <div className="result-meta">
+                                    <div className="result-meta" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                         {r.address || r.city}
                                         {r.google_rating && ` · ⭐ ${r.google_rating}`}
                                         {r.price_level != null &&
@@ -342,7 +345,7 @@ export default function MapPage() {
             <div
                 className={`map-legend ${mapReady ? "map-legend--visible" : ""}`}
                 style={{
-                    bottom: sheetOpen ? "calc(66vh + 16px)" : 24,
+                    bottom: sheetOpen ? "calc(72vh + 12px)" : `calc(24px + var(--safe-bottom, 0px))`,
                 }}
             >
                 <div
@@ -358,7 +361,7 @@ export default function MapPage() {
                         color="var(--text-muted)"
                         style={{
                             transform: legendCollapsed ? "rotate(180deg)" : "rotate(0deg)",
-                            transition: "transform 0.3s ease",
+                            transition: "transform 0.35s cubic-bezier(0.34,1.56,0.64,1)",
                         }}
                     />
                 </div>
@@ -384,7 +387,12 @@ export default function MapPage() {
 
             {/* Restaurant count badge */}
             {mapReady && restaurants.length > 0 && (
-                <div className="restaurant-count">
+                <div
+                    className="restaurant-count"
+                    style={{
+                        bottom: sheetOpen ? `calc(72vh + 12px)` : `calc(24px + var(--safe-bottom, 0px))`,
+                    }}
+                >
                     <span className="restaurant-count__number">{restaurants.length}</span>
                     <span className="restaurant-count__label">restaurants loaded</span>
                 </div>
@@ -396,218 +404,6 @@ export default function MapPage() {
                 loading={analyzing}
                 onClose={handleClose}
             />
-
-            <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes marker-pulse {
-          0%, 100% { box-shadow: 0 0 12px currentColor; }
-          50% { box-shadow: 0 0 24px currentColor; }
-        }
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeInDown {
-          from { opacity: 0; transform: translateY(-12px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideInRight {
-          from { opacity: 0; transform: translateX(20px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-
-        .leaflet-tooltip-dark {
-          background: rgba(17,17,17,0.95) !important;
-          border: 1px solid #222 !important;
-          color: #f0f0f0 !important;
-          font-family: Inter, sans-serif !important;
-          font-size: 12px !important;
-          border-radius: 8px !important;
-          padding: 6px 12px !important;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.6) !important;
-          backdrop-filter: blur(8px) !important;
-        }
-        .leaflet-tooltip-dark::before { border-top-color: #222 !important; }
-
-        /* Map overlay backdrop */
-        .map-overlay-backdrop {
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,0.3);
-          z-index: 850;
-          transition: opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-        }
-
-        /* Brand badge */
-        .brand-badge {
-          position: fixed;
-          top: 20px;
-          left: 20px;
-          z-index: 1001;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 10px 18px;
-          background: rgba(8,8,8,0.92);
-          backdrop-filter: blur(20px) saturate(180%);
-          border: 1px solid rgba(79,195,247,0.15);
-          border-radius: 40px;
-          box-shadow: 0 0 24px rgba(79,195,247,0.08), 0 4px 16px rgba(0,0,0,0.4);
-          opacity: 0;
-          transform: translateY(-12px);
-          transition: all 0.5s cubic-bezier(0.34,1.56,0.64,1);
-        }
-        .brand-badge--visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-        .brand-badge__dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #4fc3f7, #29b6f6);
-          box-shadow: 0 0 10px #4fc3f7;
-          animation: badge-glow 3s ease-in-out infinite;
-        }
-        @keyframes badge-glow {
-          0%, 100% { box-shadow: 0 0 8px #4fc3f7; }
-          50% { box-shadow: 0 0 16px #4fc3f7, 0 0 32px rgba(79,195,247,0.3); }
-        }
-        .brand-badge__name {
-          font-size: 14px;
-          font-weight: 700;
-          color: #f0f0f0;
-          letter-spacing: -0.3px;
-        }
-        .brand-badge__tagline {
-          font-size: 11px;
-          color: var(--text-muted);
-          font-weight: 400;
-          padding-left: 2px;
-          border-left: 1px solid rgba(255,255,255,0.1);
-          padding-left: 8px;
-        }
-
-        /* Search overlay entrance */
-        .search-overlay--visible {
-          animation: fadeInDown 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.15s both;
-        }
-        .search-spinner {
-          animation: spin 1s linear infinite;
-          flex-shrink: 0;
-        }
-        .search-clear-btn {
-          background: rgba(255,255,255,0.06);
-          border: none;
-          cursor: pointer;
-          color: #888;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          transition: all 0.2s;
-        }
-        .search-clear-btn:hover {
-          background: rgba(255,255,255,0.12);
-          color: #fff;
-        }
-
-        /* Legend */
-        .map-legend {
-          position: fixed;
-          right: 20px;
-          z-index: 1000;
-          background: rgba(17,17,17,0.92);
-          backdrop-filter: blur(16px) saturate(180%);
-          border: 1px solid var(--border);
-          border-radius: var(--radius-md);
-          font-size: 12px;
-          transition: bottom 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-                      opacity 0.4s ease, transform 0.4s ease;
-          overflow: hidden;
-          opacity: 0;
-          transform: translateX(20px);
-        }
-        .map-legend--visible {
-          opacity: 1;
-          transform: translateX(0);
-          animation: slideInRight 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.3s both;
-        }
-        .legend-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 10px 14px;
-          cursor: pointer;
-          user-select: none;
-          transition: background 0.2s;
-        }
-        .legend-header:hover { background: rgba(255,255,255,0.03); }
-        .legend-header__left {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          color: var(--text-muted);
-          font-size: 10px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        .legend-body {
-          padding: 0 14px 12px;
-          animation: fadeInUp 0.2s ease-out;
-        }
-        .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-bottom: 6px;
-          color: var(--text-secondary);
-        }
-        .legend-item:last-child { margin-bottom: 0; }
-        .legend-dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          flex-shrink: 0;
-        }
-
-        /* Restaurant count badge */
-        .restaurant-count {
-          position: fixed;
-          bottom: 24px;
-          left: 20px;
-          z-index: 1000;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 8px 14px;
-          background: rgba(17,17,17,0.92);
-          backdrop-filter: blur(16px);
-          border: 1px solid var(--border);
-          border-radius: 40px;
-          animation: fadeInUp 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.5s both;
-        }
-        .restaurant-count__number {
-          font-size: 14px;
-          font-weight: 700;
-          color: var(--accent);
-        }
-        .restaurant-count__label {
-          font-size: 11px;
-          color: var(--text-muted);
-        }
-
-        /* Mobile responsiveness */
-        @media (max-width: 640px) {
-          .brand-badge__tagline { display: none; }
-          .brand-badge { padding: 8px 14px; }
-          .brand-badge__name { font-size: 13px; }
-          .restaurant-count { display: none; }
-        }
-      `}</style>
         </>
     );
 }
