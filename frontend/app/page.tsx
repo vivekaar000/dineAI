@@ -56,6 +56,7 @@ export default function MapPage() {
     const [searchResults, setSearchResults] = useState<Restaurant[]>([]);
     const [showResults, setShowResults] = useState(false);
     const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+    const [analysisError, setAnalysisError] = useState<string | null>(null);
     const [analyzing, setAnalyzing] = useState(false);
     const [scores, setScores] = useState<Map<string, number>>(new Map());
     const [legendCollapsed, setLegendCollapsed] = useState(false);
@@ -187,6 +188,7 @@ export default function MapPage() {
         mapInstanceRef.current?.panTo([r.lat, r.lng], { animate: true, duration: 0.5 });
 
         setAnalysis(null);
+        setAnalysisError(null);
         setAnalyzing(true);
 
         try {
@@ -208,9 +210,11 @@ export default function MapPage() {
                     result = await analyzeLivePlace(searchResults[0].place_id);
                 } else {
                     console.warn("Could not find live Places match for OSM restaurant:", r.name);
+                    setAnalysisError(`Could not find a Google Places match for "${r.name}".`);
                     return;
                 }
             } else {
+                setAnalysisError("Invalid restaurant data.");
                 return;
             }
 
@@ -219,6 +223,9 @@ export default function MapPage() {
             const score = result.tts_score;
             setScores((prev) => new Map(prev).set(key, score));
             marker?.setIcon(makeIcon(getMarkerColor(score), true));
+        } catch (e) {
+            console.error("Analysis error:", e);
+            setAnalysisError("Failed to fetch intelligence data. The server might be experiencing high load or returned an error.");
         } finally {
             setAnalyzing(false);
         }
@@ -323,6 +330,7 @@ export default function MapPage() {
 
     const handleClose = () => {
         setAnalysis(null);
+        setAnalysisError(null);
         setAnalyzing(false);
         if (selectedKeyRef.current) {
             const marker = markersRef.current.get(selectedKeyRef.current);
@@ -480,6 +488,7 @@ export default function MapPage() {
             <BottomSheet
                 analysis={analysis}
                 loading={analyzing}
+                error={analysisError}
                 onClose={handleClose}
             />
         </>

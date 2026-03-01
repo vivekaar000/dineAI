@@ -10,6 +10,7 @@ import { AnalysisResult } from "@/lib/api";
 interface Props {
     analysis: AnalysisResult | null;
     loading: boolean;
+    error?: string | null;
     onClose: () => void;
 }
 
@@ -55,10 +56,10 @@ const TAB_ICONS = {
     validation: CheckCircle,
 };
 
-export default function BottomSheet({ analysis, loading, onClose }: Props) {
+export default function BottomSheet({ analysis, loading, error, onClose }: Props) {
     const [tab, setTab] = useState<"overview" | "signals" | "validation">("overview");
     const [tabKey, setTabKey] = useState(0);
-    const isOpen = loading || !!analysis;
+    const isOpen = loading || !!analysis || !!error;
 
     // Reset tab when opening new analysis
     useEffect(() => {
@@ -127,6 +128,25 @@ export default function BottomSheet({ analysis, loading, onClose }: Props) {
                             </div>
                         ))}
                     </div>
+                </div>
+            ) : error ? (
+                <div style={{ padding: "40px 20px", textAlign: "center" }}>
+                    <div style={{ fontSize: 48, marginBottom: 12 }}>😕</div>
+                    <div style={{ fontSize: 16, fontWeight: 500, color: "var(--text-primary)", marginBottom: 8 }}>
+                        Analysis Failed
+                    </div>
+                    <div style={{ fontSize: 13, color: "var(--text-muted)", maxWidth: 260, margin: "0 auto" }}>
+                        {error}
+                    </div>
+                    <button
+                        className="close-btn"
+                        onClick={onClose}
+                        title="Close summary"
+                        aria-label="Close summary"
+                        style={{ position: "absolute", top: 16, right: 16 }}
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
             ) : analysis ? (
                 <>
