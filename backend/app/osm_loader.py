@@ -62,7 +62,7 @@ def load_pois():
     return pois
 
 
-def parse_osm(data: dict) -> list[dict]:
+def parse_osm(data: dict):
     """Convert OSM elements into clean restaurant dicts."""
     restaurants = []
     for el in data.get("elements", []):
