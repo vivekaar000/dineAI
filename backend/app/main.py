@@ -7,6 +7,8 @@ from app import models
 from app.routers import restaurants, analyze, validate, places
 
 
+startup_errors = []
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create tables
@@ -20,13 +22,19 @@ async def lifespan(app: FastAPI):
         from app.osm_loader import load as osm_load
         osm_load()
     except Exception as e:
-        print(f"OSM load warning: {e}")
+        import traceback
+        err = traceback.format_exc()
+        print(f"OSM load warning: {err}")
+        startup_errors.append(f"OSM: {err}")
     # Also run the original seed for meta data / reviews
     try:
         from app.seed import run_seed
         run_seed()
     except Exception as e:
-        print(f"Seed warning: {e}")
+        import traceback
+        err = traceback.format_exc()
+        print(f"Seed warning: {err}")
+        startup_errors.append(f"Seed: {err}")
     yield
 
 
@@ -51,6 +59,6 @@ app.include_router(validate.router, prefix="/api", tags=["validation"])
 app.include_router(places.router, prefix="/api", tags=["places"])
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok", "service": "Tourist Targeting Score API"}
+@app.get("/api/startup-log")
+def startup_log():
+    return {"errors": startup_errors}
