@@ -431,6 +431,59 @@ body {
 }
 
 /* ═══════════════════════════════════════
+   TOP NAV
+   ═══════════════════════════════════════ */
+
+.top-nav {
+  position: fixed;
+  top: calc(16px + var(--safe-top));
+  right: calc(16px + var(--safe-left));
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0;
+  transform: translateY(-16px) scale(0.95);
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.top-nav--visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.top-nav a {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  background: rgba(8, 8, 8, 0.92);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 40px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+.top-nav a:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.top-nav .nav-primary {
+  background: var(--accent);
+  color: #000;
+  border-color: transparent;
+}
+
+.top-nav .nav-primary:hover {
+  background: #fff;
+  color: #000;
+}
+
+/* ═══════════════════════════════════════
    SEARCH OVERLAY
    ═══════════════════════════════════════ */
 

@@ -373,6 +373,12 @@ export default function MapPage() {
                 <span className="brand-badge__tagline">Restaurant Intelligence</span>
             </div>
 
+            {/* Top Navigation */}
+            <div className={`top-nav ${mapReady ? "top-nav--visible" : ""}`}>
+                <a href="/pricing">Pricing</a>
+                <a href="/dashboard" className="nav-primary">Dashboard</a>
+            </div>
+
             {/* Search overlay */}
             <div className={`search-overlay ${mapReady ? "search-overlay--visible" : ""}`}>
                 <div className="search-bar">
