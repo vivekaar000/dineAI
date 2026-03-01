@@ -120,13 +120,42 @@ export default function MapPage() {
 
     const loadRestaurants = useCallback(async (map: import("leaflet").Map, leaflet: LeafletType) => {
         try {
-            const data = await fetchRestaurants();
-            setRestaurants(data);
+            // Fetch backend DB
+            const dbPromise = fetchRestaurants().catch(() => [] as Restaurant[]);
+            // Fetch comprehensive local OSM data
+            const osmPromise = fetch("/nashville_restaurants.json").then(r => r.json()).catch(() => [] as Restaurant[]);
 
-            data.forEach((r) => {
+            const [dbData, osmData] = await Promise.all([dbPromise, osmPromise]);
+
+            // Merge and deduplicate (favor DB data since it has real IDs and place_ids)
+            // Deduplicate by rounding coordinates to ~11m precision (3 decimal places) to catch slight variations
+            const merged = new Map<string, Restaurant>();
+
+            // Add OSM data first
+            osmData.forEach((r: any) => {
                 if (!r.lat || !r.lng) return;
-                const key = `db-${r.id}`;
-                const color = getMarkerColor(undefined);
+                const dedupKey = `${r.name.toLowerCase().trim()}_${r.lat.toFixed(3)}_${r.lng.toFixed(3)}`;
+                merged.set(dedupKey, {
+                    ...r,
+                    id: Math.floor(Math.random() * 1000000) + 10000, // Fake ID for OSM records
+                    is_osm: true
+                });
+            });
+
+            // Add DB data, overwriting any matching OSM records (DB is ground truth)
+            dbData.forEach((r: Restaurant) => {
+                if (!r.lat || !r.lng) return;
+                const dedupKey = `${r.name.toLowerCase().trim()}_${r.lat.toFixed(3)}_${r.lng.toFixed(3)}`;
+                merged.set(dedupKey, r);
+            });
+
+            const finalData = Array.from(merged.values());
+            setRestaurants(finalData);
+
+            finalData.forEach((r) => {
+                const isOsm = r.is_osm === true;
+                const key = isOsm ? `osm-${r.id}` : `db-${r.id}`;
+                const color = getMarkerColor(undefined); // Unanalyzed by default
                 const marker = leaflet
                     .marker([r.lat, r.lng], { icon: makeIcon(color, false) })
                     .addTo(map)
@@ -139,7 +168,7 @@ export default function MapPage() {
                 markersRef.current.set(key, marker);
             });
         } catch {
-            // Backend may not be running yet
+            // Silently handle errors
         }
     }, []);
 
@@ -162,10 +191,25 @@ export default function MapPage() {
 
         try {
             let result: AnalysisResult;
+
             if (r.place_id) {
+                // Already has a Google Place ID
                 result = await analyzeLivePlace(r.place_id);
-            } else if (r.id) {
+            } else if (r.id && !key.startsWith("osm-")) {
+                // Real DB restaurant
                 result = await analyzeRestaurant(r.id);
+            } else if (key.startsWith("osm-")) {
+                // OSM Restaurant: Doesn't have place_id yet! We must search it in Places to get it.
+                const { placesSearch } = await import("@/lib/api");
+                const q = `${r.name} ${r.city || "Nashville"}`;
+                const searchResults = await placesSearch(q);
+
+                if (searchResults && searchResults.length > 0 && searchResults[0].place_id) {
+                    result = await analyzeLivePlace(searchResults[0].place_id);
+                } else {
+                    console.warn("Could not find live Places match for OSM restaurant:", r.name);
+                    return;
+                }
             } else {
                 return;
             }
@@ -180,7 +224,7 @@ export default function MapPage() {
         }
     }, [scores]);
 
-    // Search debounce with fallback
+    // Search debounce with local + fallback API
     useEffect(() => {
         if (!searchQuery.trim()) {
             setSearchResults([]);
@@ -189,8 +233,22 @@ export default function MapPage() {
         }
 
         const t = setTimeout(async () => {
+            const query = searchQuery.toLowerCase().trim();
+
+            // 1. Instant local search (checks all 1600+ pins on the map first)
+            const localHits = restaurants.filter(
+                r => r.name.toLowerCase().includes(query) ||
+                    (r.cuisine && r.cuisine.toLowerCase().includes(query))
+            ).slice(0, 8); // Top 8 local hits
+
+            if (localHits.length > 0) {
+                setSearchResults(localHits);
+                setShowResults(true);
+                return; // Resolve instantly without network calls
+            }
+
+            // 2. Fallback to live Places search if not found locally
             try {
-                // Try live Places search first
                 const results = await placesSearch(searchQuery);
                 if (results && results.length > 0) {
                     setSearchResults(results);
@@ -198,11 +256,11 @@ export default function MapPage() {
                     return;
                 }
             } catch {
-                // Places API failed — fall through to DB search
+                // Places API failed
             }
 
+            // 3. Fallback to backend DB
             try {
-                // Fallback: search local DB
                 const { searchRestaurants } = await import("@/lib/api");
                 const dbResults = await searchRestaurants(searchQuery);
                 if (dbResults && dbResults.length > 0) {
@@ -216,10 +274,10 @@ export default function MapPage() {
 
             setSearchResults([]);
             setShowResults(false);
-        }, 400);
+        }, 300); // reduced debounce from 400 for faster local response
 
         return () => clearTimeout(t);
-    }, [searchQuery]);
+    }, [searchQuery, restaurants]);
 
     // Keyboard shortcuts
     useEffect(() => {

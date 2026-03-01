@@ -12,6 +12,7 @@ export interface Restaurant {
     address?: string;
     google_rating?: number;
     price_level?: number;
+    is_osm?: boolean;
 }
 
 export interface SignalScore {
