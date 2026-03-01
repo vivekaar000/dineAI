@@ -61,4 +61,18 @@ app.include_router(places.router, prefix="/api", tags=["places"])
 
 @app.get("/api/startup-log")
 def startup_log():
-    return {"errors": startup_errors}
+    from app.db import SessionLocal
+    db = SessionLocal()
+    try:
+        count = db.query(models.Restaurant).count()
+        nashville_count = db.query(models.Restaurant).filter(models.Restaurant.city.ilike("%nashville%")).count()
+    finally:
+        db.close()
+    import os
+    return {
+        "errors": startup_errors,
+        "total_restaurants": count,
+        "nashville_restaurants": nashville_count,
+        "db_url": settings.database_url,
+        "cwd": os.getcwd(),
+    }
