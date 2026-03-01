@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-// Initialize Stripe (requires STRIPE_SECRET_KEY in environment)
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-    apiVersion: "2023-10-16" as any,
-});
+// Lazy load Stripe to prevent build-time crashes on Vercel without env vars
+function getStripe() {
+    return new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+        apiVersion: "2023-10-16" as any,
+    });
+}
 
 export async function POST(req: Request) {
     try {
@@ -40,7 +42,7 @@ export async function POST(req: Request) {
         const exactStripePriceId = isYearly ? tierPrices.yearly : tierPrices.monthly;
 
         // Create Checkout Session
-        const session = await stripe.checkout.sessions.create({
+        const session = await getStripe().checkout.sessions.create({
             payment_method_types: ["card"],
             mode: "subscription",
             // TODO: In production, pass the actual Supabase user UUID here to sync gracefully via Webhooks
