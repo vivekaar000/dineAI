@@ -3,7 +3,7 @@ const nextConfig = {
     reactStrictMode: true,
     env: {
         NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
-        NEXT_PUBLIC_GOOGLE_MAPS_KEY: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "AIzaSyBfih2VmM4atl8KC4iCKY6cfGSLGBoKXCo",
+        NEXT_PUBLIC_GOOGLE_MAPS_KEY: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "",
     },
 };
 
