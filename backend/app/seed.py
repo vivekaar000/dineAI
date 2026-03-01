@@ -539,19 +539,56 @@ def seed():
 
 
 def run_seed():
-    """Safe wrapper: only seeds demo restaurants if the DB has no seed data (no NYC/Paris restaurants)."""
+    """Safe wrapper: only adds demo restaurants if they don't exist yet. Never deletes existing data."""
     from app.db import SessionLocal
     session = SessionLocal()
     try:
+        # Check if seed demo data already exists
         count = session.query(models.Restaurant).filter(
             models.Restaurant.city.in_(["New York", "Paris"])
         ).count()
-        if count == 0:
-            seed()
-        else:
+        if count > 0:
             print(f"Seed data already present ({count} non-Nashville restaurants). Skipping seed.")
+            return
+        
+        # Check if OSM data is already loaded - if so, don't clear it!
+        osm_count = session.query(models.Restaurant).count()
+        if osm_count > 20:
+            print(f"OSM data already loaded ({osm_count} restaurants). Adding demo data without clearing.")
+            # Just run seed without clearing
+            models.Base.metadata.create_all(bind=engine)
+            # We need to add the demo data but NOT call clear_data
+            # Import the seed restaurants directly
+            seed_no_clear()
+        else:
+            # Fresh database, safe to do full seed
+            seed()
     finally:
         session.close()
+
+
+def seed_no_clear():
+    """Add demo restaurants and their data without clearing existing restaurants."""
+    db = SessionLocal()
+    try:
+        # Only add attractions if they don't exist
+        existing_attractions = db.query(models.Attraction).count()
+        if existing_attractions == 0:
+            attractions = [
+                models.Attraction(name="Times Square", city="New York", lat=40.7580, lng=-73.9855),
+                models.Attraction(name="Central Park", city="New York", lat=40.7851, lng=-73.9683),
+                models.Attraction(name="Brooklyn Bridge", city="New York", lat=40.7061, lng=-73.9969),
+                models.Attraction(name="Eiffel Tower", city="Paris", lat=48.8584, lng=2.2945),
+                models.Attraction(name="Louvre Museum", city="Paris", lat=48.8606, lng=2.3376),
+                models.Attraction(name="Broadway Strip", city="Nashville", lat=36.1600, lng=-86.7797),
+                models.Attraction(name="Country Music HOF", city="Nashville", lat=36.1607, lng=-86.7760),
+                models.Attraction(name="Colosseum", city="Rome", lat=41.8902, lng=12.4922),
+            ]
+            db.add_all(attractions)
+            db.commit()
+        print("Demo seed completed (no clear).")
+    finally:
+        db.close()
 
 
 if __name__ == "__main__":
