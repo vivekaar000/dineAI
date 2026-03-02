@@ -60,92 +60,84 @@ export default function DashboardPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-zinc-200">
+        <div className="dashboard-layout">
             {/* Header */}
-            <header className="border-b border-white/10 bg-white/[0.02]">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-                    <a href="/" className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
-                            <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
-                        </span>
-                        DineAI
+            <header className="dashboard-header">
+                <div className="dashboard-header-inner">
+                    <a href="/" className="dashboard-brand">
+                        <div className="dashboard-brand-dot">
+                            <div className="dashboard-brand-inner-dot"></div>
+                        </div>
+                        Anglap.ai
                     </a>
-                    <button
-                        onClick={handleLogout}
-                        className="text-sm font-medium text-zinc-400 hover:text-white flex items-center gap-2 transition-colors"
-                    >
+                    <button onClick={handleLogout} className="dashboard-logout">
                         <LogOut size={16} /> Sign out
                     </button>
                 </div>
             </header>
 
             {/* Main Content */}
-            <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                <div className="mb-10">
-                    <h1 className="text-3xl font-extrabold text-white tracking-tight">User Dashboard</h1>
-                    <p className="mt-2 text-zinc-400">Manage your subscription and access premium features.</p>
+            <main className="dashboard-main">
+                <div className="dashboard-title-section">
+                    <h1 className="dashboard-title">User Dashboard</h1>
+                    <p className="dashboard-subtitle">Manage your subscription and access premium features.</p>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="dashboard-grid">
 
                     {/* Sidebar / Nav */}
-                    <div className="col-span-1 space-y-2">
-                        <button className="w-full flex items-center gap-3 px-4 py-3 bg-white/5 rounded-xl border border-white/10 text-white font-medium transition-colors">
-                            <CreditCard size={18} className="text-indigo-400" /> Subscription
+                    <div className="dashboard-sidebar">
+                        <button className="dashboard-nav-item active">
+                            <CreditCard size={18} className="dashboard-nav-icon" /> Subscription
                         </button>
-                        <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] rounded-xl text-zinc-400 font-medium transition-colors">
-                            <User size={18} /> Profile Settings
+                        <button className="dashboard-nav-item">
+                            <User size={18} className="dashboard-nav-icon" /> Profile Settings
                         </button>
-                        <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] rounded-xl text-zinc-400 font-medium transition-colors">
-                            <Settings size={18} /> API Keys
+                        <button className="dashboard-nav-item">
+                            <Settings size={18} className="dashboard-nav-icon" /> API Keys
                         </button>
                     </div>
 
                     {/* Content Panel */}
-                    <div className="md:col-span-2 space-y-6">
+                    <div className="dashboard-content">
                         {/* Profile Stub */}
-                        <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 backdrop-blur-xl">
-                            <h3 className="text-lg font-medium text-white mb-1">Account details</h3>
-                            <p className="text-zinc-400 text-sm mb-4">Logged in as: <span className="text-white font-medium">{user?.email || "mockuser@example.com"}</span></p>
+                        <div className="dashboard-card">
+                            <User size={100} className="dashboard-card-bg-icon" />
+                            <h3 className="dashboard-card-title">Account details</h3>
+                            <p className="dashboard-card-desc">
+                                Logged in as: <span className="dashboard-user-email">{user?.email || "loading..."}</span>
+                            </p>
                         </div>
 
                         {/* Billing Stub */}
-                        <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 backdrop-blur-xl relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
-                                <CreditCard size={100} />
-                            </div>
+                        <div className="dashboard-card">
+                            <CreditCard size={100} className="dashboard-card-bg-icon" />
 
-                            <h3 className="text-lg font-medium text-white mb-1">Current Plan</h3>
-                            <p className="text-zinc-400 text-sm mb-6">Manage your tier and billing preferences.</p>
+                            <h3 className="dashboard-card-title">Current Plan</h3>
+                            <p className="dashboard-card-desc">Manage your tier and billing preferences.</p>
 
-                            <div className="flex items-center gap-4 mb-8 p-4 bg-black/30 rounded-xl border border-white/5">
-                                <div className="p-3 bg-indigo-500/20 rounded-lg border border-indigo-500/30">
-                                    <Shield size={24} className="text-indigo-400" />
+                            <div className="dashboard-plan-box">
+                                <div className="dashboard-plan-icon-wrapper">
+                                    <Shield size={24} />
                                 </div>
                                 <div>
-                                    <div className="flex items-center gap-2">
-                                        <p className="font-bold text-white text-lg capitalize">{tier === "free" ? "Explorer" : tier}</p>
-                                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white/10 text-zinc-300">Active</span>
+                                    <div className="dashboard-plan-name-row">
+                                        <span className="dashboard-plan-name">{tier === "free" ? "Explorer" : tier}</span>
+                                        <span className="dashboard-plan-badge">Active</span>
                                     </div>
-                                    <p className="text-xs text-zinc-500">
+                                    <p className="dashboard-plan-desc">
                                         {tier === "free" ? "You are on the free tier." : "You have access to premium features."}
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="dashboard-actions">
                                 {tier === "free" ? (
-                                    <a
-                                        href="/pricing"
-                                        className="flex-1 py-3 px-4 rounded-xl border border-transparent text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 focus:outline-none transition-colors text-center shadow-[0_0_15px_-5px_rgba(99,102,241,0.5)]"
-                                    >
+                                    <a href="/pricing" className="dashboard-btn dashboard-btn-primary">
                                         Upgrade Plan
                                     </a>
                                 ) : (
-                                    <button
-                                        onClick={handleManageBilling}
-                                        className="flex-1 py-3 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm font-medium text-white transition-colors"
-                                    >
+                                    <button onClick={handleManageBilling} className="dashboard-btn dashboard-btn-secondary">
                                         Manage Subscription
                                     </button>
                                 )}
@@ -156,5 +148,5 @@ export default function DashboardPage() {
                 </div>
             </main>
         </div>
-    )
+    );
 }
