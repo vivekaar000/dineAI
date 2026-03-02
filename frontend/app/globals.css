@@ -1572,7 +1572,9 @@ body {
    ═══════════════════════════════════════ */
 
 .pricing-layout {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: inherit;
@@ -2205,7 +2207,9 @@ body {
    ═══════════════════════════════════════ */
 
 .auth-layout {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   display: flex;
@@ -2419,7 +2423,9 @@ body {
    ═══════════════════════════════════════ */
 
 .dashboard-layout {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: inherit;

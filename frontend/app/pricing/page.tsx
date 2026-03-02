@@ -101,7 +101,7 @@ export default function PricingPage() {
                             <li><CheckCircle2 className="feature-icon" /> 3 AI Search Queries/Day</li>
                             <li><CheckCircle2 className="feature-icon" /> Community Reviews</li>
                         </ul>
-                        <button className="card-button outline">
+                        <button onClick={() => window.location.href = "/login?tab=signup"} className="card-button outline">
                             Free Forever
                         </button>
                     </motion.div>
