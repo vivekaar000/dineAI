@@ -37,8 +37,9 @@ function LoginContent() {
         if (error) {
             setMsg(error.message);
         } else {
-            setMsg(isSignup ? "Check your email for the confirmation link!" : "Logged in successfully!");
-            if (!isSignup) window.location.href = "/dashboard";
+            // Because email confirmation is off, sign up implicitly signs you in. Let's redirect both correctly.
+            setMsg(isSignup ? "Account created! Redirecting..." : "Logged in successfully!");
+            window.location.href = "/dashboard";
         }
         setLoading(false);
     };
