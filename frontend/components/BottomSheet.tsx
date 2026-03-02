@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { X, TrendingUp, BarChart3, CheckCircle } from "lucide-react";
+import { X, TrendingUp, BarChart3, CheckCircle, Lock } from "lucide-react";
 import ScoreRing from "./ScoreRing";
 import SignalRadar from "./SignalRadar";
 import SignalBar from "./SignalBar";
@@ -265,28 +265,36 @@ export default function BottomSheet({ analysis, loading, error, onClose, tier = 
                                 <>
                                     {/* Signal cards grid */}
                                     <div className="signal-grid">
-                                        {SIGNAL_KEYS.map((key) => {
+                                        {SIGNAL_KEYS.map((key, index) => {
+                                            const isLocked = tier === "free" && index >= 2;
                                             const sig = analysis.signals[key];
-                                            const score = sig?.score ?? 0;
-                                            const color = getBarFill(score);
+                                            const score = isLocked ? 0 : (sig?.score ?? 0);
+                                            const color = isLocked ? "var(--border-light)" : getBarFill(score);
                                             return (
-                                                <div className="signal-card" key={key}>
+                                                <div className="signal-card" key={key} style={{ position: "relative", opacity: isLocked ? 0.8 : 1 }}>
+                                                    {isLocked && (
+                                                        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(22, 22, 22, 0.4)", backdropFilter: "blur(2px)", zIndex: 10, borderRadius: "8px", flexDirection: "column", gap: "4px" }}>
+                                                            <Lock size={16} color="var(--text-muted)" />
+                                                            <span style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.5px", textTransform: "uppercase" }}>Pro Only</span>
+                                                        </div>
+                                                    )}
                                                     <div className="signal-label">{sig?.label}</div>
-                                                    <div className="signal-value" style={{ color }}>
-                                                        {Math.round(score)}
+                                                    <div className="signal-value" style={{ color: isLocked ? "transparent" : color, textShadow: isLocked ? "0 0 10px rgba(255,255,255,0.1)" : "none" }}>
+                                                        {isLocked ? "00" : Math.round(score)}
                                                     </div>
                                                     <div className="signal-bar">
                                                         <div
                                                             className="signal-bar-fill"
                                                             style={{
-                                                                width: `${score}%`,
+                                                                width: isLocked ? "0%" : `${score}%`,
                                                                 background: color,
+                                                                transition: "width 1s cubic-bezier(0.34, 1.56, 0.64, 1)",
                                                             }}
                                                         />
                                                     </div>
-                                                    <div className="signal-extra">
+                                                    <div className="signal-extra" style={{ filter: isLocked ? "blur(3px)" : "none", opacity: isLocked ? 0.3 : 1 }}>
                                                         {key === "price_inflation" && sig.inflation_pct !== undefined
-                                                            ? `${sig.inflation_pct > 0 ? "+" : ""}${sig.inflation_pct?.toFixed(1)}% vs cuisine avg`
+                                                            ? `${sig.inflation_pct > 0 ? "+" : ""}${sig.inflation_pct?.toFixed(1)}% vs avg`
                                                             : key === "attraction_proximity" && sig.nearest_attraction
                                                                 ? sig.nearest_attraction
                                                                 : `Weight: ${(WEIGHTS[key] * 100).toFixed(0)}%`}
@@ -297,12 +305,26 @@ export default function BottomSheet({ analysis, loading, error, onClose, tier = 
                                     </div>
 
                                     {/* Charts */}
-                                    <div className="chart-grid">
-                                        <SignalRadar signals={analysis.signals} />
-                                        <SignalBar
-                                            signals={analysis.signals}
-                                            restaurantName={analysis.restaurant.name}
-                                        />
+                                    <div style={{ position: "relative" }}>
+                                        {tier === "free" && (
+                                            <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(8, 8, 8, 0.7)", backdropFilter: "blur(6px)", zIndex: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, borderRadius: "var(--radius-lg)" }}>
+                                                <Lock size={32} color="var(--accent)" style={{ opacity: 0.8 }} />
+                                                <div style={{ fontSize: 16, fontWeight: 700, color: "white" }}>Visual Analytics Locked</div>
+                                                <div style={{ fontSize: 13, color: "var(--text-secondary)", textAlign: "center", maxWidth: "80%" }}>
+                                                    Upgrade to Insider to unlock the target radar mapped with advanced datasets.
+                                                </div>
+                                                <a href="/pricing" style={{ padding: "8px 16px", background: "#4f46e5", borderRadius: "8px", fontSize: 13, fontWeight: 600, color: "white", textDecoration: "none", marginTop: 8 }}>
+                                                    Upgrade Now
+                                                </a>
+                                            </div>
+                                        )}
+                                        <div className="chart-grid" style={{ opacity: tier === "free" ? 0.3 : 1, pointerEvents: tier === "free" ? "none" : "auto" }}>
+                                            <SignalRadar signals={analysis.signals} />
+                                            <SignalBar
+                                                signals={analysis.signals}
+                                                restaurantName={analysis.restaurant.name}
+                                            />
+                                        </div>
                                     </div>
 
                                     {/* Methodology note */}
