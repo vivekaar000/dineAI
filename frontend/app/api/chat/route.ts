@@ -20,7 +20,7 @@ export async function POST(req: Request) {
         }
 
         // Use a fast model
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
         const prompt = `You are an AI assistant for Anglap.ai, a platform that helps users find and analyze restaurants.
 Users can ask for restaurant recommendations, about the data, or general food advice.
