@@ -33,7 +33,7 @@ export default function PricingPage() {
                 <div className="header-inner">
                     <a href="/" className="header-brand">
                         <div className="brand-dot"></div>
-                        <span className="brand-text">Anglap.ai</span>
+                        <span className="brand-text">Dine AI</span>
                     </a>
                     <div className="header-actions">
                         <a href="/login?tab=signin" className="action-link">Sign In</a>

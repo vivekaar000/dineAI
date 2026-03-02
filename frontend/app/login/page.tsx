@@ -50,7 +50,7 @@ function LoginContent() {
                 <div className="auth-header">
                     <a href="/" className="auth-logo">
                         <div className="auth-logo-dot"></div>
-                        Anglap.ai
+                        Dine AI
                     </a>
                     <h2 className="auth-title">
                         {isSignup ? "Create your account" : "Sign in to your account"}
