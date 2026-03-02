@@ -12,6 +12,7 @@ interface Props {
     loading: boolean;
     error?: string | null;
     onClose: () => void;
+    tier?: string;
 }
 
 function getScoreColor(score: number): string {
@@ -56,7 +57,7 @@ const TAB_ICONS = {
     validation: CheckCircle,
 };
 
-export default function BottomSheet({ analysis, loading, error, onClose }: Props) {
+export default function BottomSheet({ analysis, loading, error, onClose, tier = "free" }: Props) {
     const [tab, setTab] = useState<"overview" | "signals" | "validation">("overview");
     const [tabKey, setTabKey] = useState(0);
     const isOpen = loading || !!analysis || !!error;
@@ -321,10 +322,48 @@ export default function BottomSheet({ analysis, loading, error, onClose }: Props
                                         price benchmarking vs cuisine averages, menu engineering detection, reviewer locality metrics,
                                         and attraction proximity. All signals are normalized 0–100 before weighted combination.
                                     </div>
+
+                                    {/* Premium Features Action Bar */}
+                                    <div style={{ marginTop: 24, padding: "16px", background: "rgba(255,255,255,0.02)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
+                                        <h4 style={{ fontSize: 13, fontWeight: 600, color: "white", marginBottom: 12 }}>Premium Intelligence Tools</h4>
+                                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                            <button
+                                                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "13px", fontWeight: 500, cursor: tier === "free" ? "not-allowed" : "pointer", opacity: tier === "free" ? 0.6 : 1 }}
+                                                onClick={() => tier === "free" ? window.location.href = "/pricing" : alert("Generating Neighborhood Comparison...")}
+                                            >
+                                                {tier === "free" && <span style={{ fontSize: 12 }}>🔒</span>} Neighborhood Comparison
+                                            </button>
+                                            <button
+                                                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "13px", fontWeight: 500, cursor: tier === "free" ? "not-allowed" : "pointer", opacity: tier === "free" ? 0.6 : 1 }}
+                                                onClick={() => tier === "free" ? window.location.href = "/pricing" : alert("Generating PDF Report...")}
+                                            >
+                                                {tier === "free" && <span style={{ fontSize: 12 }}>🔒</span>} Download PDF Report
+                                            </button>
+                                            <button
+                                                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "13px", fontWeight: 500, cursor: tier === "premium" ? "pointer" : "not-allowed", opacity: tier === "premium" ? 1 : 0.6 }}
+                                                onClick={() => tier === "premium" ? alert("Downloading CSV...") : window.location.href = "/pricing"}
+                                            >
+                                                {tier !== "premium" && <span style={{ fontSize: 12 }}>🔒</span>} City-wide CSV Export
+                                            </button>
+                                        </div>
+                                    </div>
                                 </>
                             )}
 
-                            {tab === "signals" && (
+                            {tab === "signals" && tier === "free" && (
+                                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: "32px 16px", textAlign: "center" }}>
+                                    <BarChart3 size={40} style={{ color: "var(--text-muted)", margin: "0 auto 12px", opacity: 0.5 }} />
+                                    <h3 style={{ fontSize: 16, fontWeight: 600, color: "white", marginBottom: 8 }}>6-Signal Target Breakdown Locked</h3>
+                                    <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 20 }}>
+                                        Upgrade to Local Insider to see exactly why this restaurant received its score, including real-time crowd density data and precise price inflation metrics.
+                                    </p>
+                                    <a href="/pricing" style={{ display: "inline-block", background: "#4f46e5", color: "white", padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+                                        Upgrade to Insider
+                                    </a>
+                                </div>
+                            )}
+
+                            {tab === "signals" && tier !== "free" && (
                                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                                     {SIGNAL_KEYS.map((key, i) => {
                                         const sig = analysis.signals[key];
@@ -403,7 +442,7 @@ export default function BottomSheet({ analysis, loading, error, onClose }: Props
                                 />
                             )}
                             {tab === "validation" && !analysis.restaurant.id && (
-                                <div style={{ color: "var(--text-secondary)", fontSize: 13, padding: "20px 0" }}>
+                                <div style={{ color: "var(--text-secondary)", fontSize: 13, padding: "20px 0", textAlign: "center" }}>
                                     Validation is available for restaurants in the local database only.
                                 </div>
                             )}

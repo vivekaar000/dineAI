@@ -10,6 +10,7 @@ import {
     Restaurant,
     AnalysisResult,
 } from "@/lib/api";
+import { createBrowserClient } from '@supabase/ssr';
 
 // Leaflet is browser-only — lazy import
 type LeafletType = typeof import("leaflet");
@@ -61,6 +62,32 @@ export default function MapPage() {
     const [scores, setScores] = useState<Map<string, number>>(new Map());
     const [legendCollapsed, setLegendCollapsed] = useState(false);
     const [mapReady, setMapReady] = useState(false);
+
+    const [user, setUser] = useState<any>(null);
+    const [tier, setTier] = useState<string>("free");
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+            const supabase = createBrowserClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+            );
+            const { data } = await supabase.auth.getUser();
+            if (data?.user) {
+                setUser(data.user);
+                const { data: profile } = await supabase
+                    .from("users")
+                    .select("subscription_tier")
+                    .eq("id", data.user.id)
+                    .single();
+                if (profile?.subscription_tier) {
+                    setTier(profile.subscription_tier);
+                }
+            }
+        };
+        fetchUser();
+    }, []);
 
     // Initialize map
     useEffect(() => {
@@ -191,6 +218,24 @@ export default function MapPage() {
         setAnalysisError(null);
         setAnalyzing(true);
 
+        // Enforce rate limiting based on tier
+        if (tier === "free") {
+            const today = new Date().toDateString();
+            const storedDate = localStorage.getItem("anglap_search_date");
+            let count = 0;
+            if (storedDate === today) {
+                count = parseInt(localStorage.getItem("anglap_search_count") || "0");
+            } else {
+                localStorage.setItem("anglap_search_date", today);
+            }
+            if (count >= 3) {
+                setAnalysisError("Daily limit of 3 AI Searches reached on the Free tier. Upgrade to Local Insider to unlock unlimited AI analysis & premium signals.");
+                setAnalyzing(false);
+                return;
+            }
+            localStorage.setItem("anglap_search_count", (count + 1).toString());
+        }
+
         try {
             let result: AnalysisResult;
 
@@ -229,7 +274,7 @@ export default function MapPage() {
         } finally {
             setAnalyzing(false);
         }
-    }, [scores]);
+    }, [scores, tier]);
 
     // Search debounce with local + fallback API
     useEffect(() => {
@@ -381,32 +426,46 @@ export default function MapPage() {
 
             {/* Search overlay */}
             <div className={`search-overlay ${mapReady ? "search-overlay--visible" : ""}`}>
-                <div className="search-bar">
-                    {analyzing ? (
-                        <Loader2 size={16} color="#4fc3f7" className="search-spinner" />
-                    ) : (
-                        <Search size={16} color="#555" style={{ flexShrink: 0 }} />
-                    )}
-                    <input
-                        type="text"
-                        placeholder="Search any restaurant…"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onFocus={() => searchResults.length > 0 && setShowResults(true)}
-                        enterKeyHint="search"
-                        autoComplete="off"
-                        autoCorrect="off"
-                        spellCheck="false"
-                    />
-                    {searchQuery && (
-                        <button
-                            onClick={() => { setSearchQuery(""); setShowResults(false); setSearchResults([]); }}
-                            className="search-clear-btn"
-                            aria-label="Clear search"
-                        >
-                            <X size={14} />
-                        </button>
-                    )}
+                <div style={{ display: "flex", gap: "8px" }}>
+                    <div className="search-bar" style={{ flex: 1 }}>
+                        {analyzing ? (
+                            <Loader2 size={16} color="#4fc3f7" className="search-spinner" />
+                        ) : (
+                            <Search size={16} color="#555" style={{ flexShrink: 0 }} />
+                        )}
+                        <input
+                            type="text"
+                            placeholder="Search any restaurant…"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={() => searchResults.length > 0 && setShowResults(true)}
+                            enterKeyHint="search"
+                            autoComplete="off"
+                            autoCorrect="off"
+                            spellCheck="false"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => { setSearchQuery(""); setShowResults(false); setSearchResults([]); }}
+                                className="search-clear-btn"
+                                aria-label="Clear search"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Advanced Dietary Filters Button */}
+                    <button
+                        onClick={() => tier === "free" ? window.location.href = "/pricing" : alert("Advanced dietary filters opened")}
+                        style={{ flexShrink: 0, width: "48px", height: "48px", borderRadius: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", cursor: "pointer", backdropFilter: "blur(20px)", pointerEvents: "auto" }}
+                        title="Advanced Dietary Filters"
+                    >
+                        <div style={{ position: "relative" }}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                            {tier === "free" && <span style={{ position: "absolute", top: -8, right: -10, fontSize: "14px", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>🔒</span>}
+                        </div>
+                    </button>
                 </div>
 
                 {showResults && searchResults.length > 0 && (
@@ -496,6 +555,7 @@ export default function MapPage() {
                 loading={analyzing}
                 error={analysisError}
                 onClose={handleClose}
+                tier={tier}
             />
         </>
     );
