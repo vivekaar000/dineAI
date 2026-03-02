@@ -68,6 +68,12 @@ export default function MapPage() {
     const [legendCollapsed, setLegendCollapsed] = useState(false);
     const [mapReady, setMapReady] = useState(false);
 
+    useEffect(() => {
+        if (typeof window !== "undefined" && window.innerWidth < 768) {
+            setLegendCollapsed(true);
+        }
+    }, []);
+
     const [user, setUser] = useState<any>(null);
     const [tier, setTier] = useState<string>("free");
 
