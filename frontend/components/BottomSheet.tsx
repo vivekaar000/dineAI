@@ -273,13 +273,13 @@ export default function BottomSheet({ analysis, loading, error, onClose, tier = 
                                             return (
                                                 <div className="signal-card" key={key} style={{ position: "relative", opacity: isLocked ? 0.8 : 1 }}>
                                                     {isLocked && (
-                                                        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(22, 22, 22, 0.4)", backdropFilter: "blur(2px)", zIndex: 10, borderRadius: "8px", flexDirection: "column", gap: "4px" }}>
+                                                        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(10, 10, 10, 0.7)", backdropFilter: "blur(12px)", zIndex: 10, borderRadius: "8px", flexDirection: "column", gap: "4px" }}>
                                                             <Lock size={16} color="var(--text-muted)" />
                                                             <span style={{ fontSize: "10px", fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.5px", textTransform: "uppercase" }}>Pro Only</span>
                                                         </div>
                                                     )}
                                                     <div className="signal-label">{sig?.label}</div>
-                                                    <div className="signal-value" style={{ color: isLocked ? "transparent" : color, textShadow: isLocked ? "0 0 10px rgba(255,255,255,0.1)" : "none" }}>
+                                                    <div className="signal-value" style={{ color: isLocked ? "transparent" : color, textShadow: isLocked ? "0 0 20px rgba(255,255,255,0.1)" : "none" }}>
                                                         {isLocked ? "00" : Math.round(score)}
                                                     </div>
                                                     <div className="signal-bar">
@@ -292,7 +292,7 @@ export default function BottomSheet({ analysis, loading, error, onClose, tier = 
                                                             }}
                                                         />
                                                     </div>
-                                                    <div className="signal-extra" style={{ filter: isLocked ? "blur(3px)" : "none", opacity: isLocked ? 0.3 : 1 }}>
+                                                    <div className="signal-extra" style={{ filter: isLocked ? "blur(8px)" : "none", opacity: isLocked ? 0.1 : 1 }}>
                                                         {key === "price_inflation" && sig.inflation_pct !== undefined
                                                             ? `${sig.inflation_pct > 0 ? "+" : ""}${sig.inflation_pct?.toFixed(1)}% vs avg`
                                                             : key === "attraction_proximity" && sig.nearest_attraction
@@ -307,7 +307,7 @@ export default function BottomSheet({ analysis, loading, error, onClose, tier = 
                                     {/* Charts */}
                                     <div style={{ position: "relative" }}>
                                         {tier === "free" && (
-                                            <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(8, 8, 8, 0.7)", backdropFilter: "blur(6px)", zIndex: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, borderRadius: "var(--radius-lg)" }}>
+                                            <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(5, 5, 5, 0.85)", backdropFilter: "blur(16px)", zIndex: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, borderRadius: "var(--radius-lg)" }}>
                                                 <Lock size={32} color="var(--accent)" style={{ opacity: 0.8 }} />
                                                 <div style={{ fontSize: 16, fontWeight: 700, color: "white" }}>Visual Analytics Locked</div>
                                                 <div style={{ fontSize: 13, color: "var(--text-secondary)", textAlign: "center", maxWidth: "80%" }}>
@@ -318,7 +318,7 @@ export default function BottomSheet({ analysis, loading, error, onClose, tier = 
                                                 </a>
                                             </div>
                                         )}
-                                        <div className="chart-grid" style={{ opacity: tier === "free" ? 0.3 : 1, pointerEvents: tier === "free" ? "none" : "auto" }}>
+                                        <div className="chart-grid" style={{ opacity: tier === "free" ? 0.1 : 1, filter: tier === "free" ? "blur(10px)" : "none", pointerEvents: tier === "free" ? "none" : "auto" }}>
                                             <SignalRadar signals={analysis.signals} />
                                             <SignalBar
                                                 signals={analysis.signals}
