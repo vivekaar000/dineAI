@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Search, MapPin, X, Loader2, ChevronDown, Compass } from "lucide-react";
+import { Search, MapPin, X, Loader2, ChevronDown, Compass, Sparkles } from "lucide-react";
 import BottomSheet from "@/components/BottomSheet";
 import {
     fetchRestaurants,
@@ -59,6 +59,11 @@ export default function MapPage() {
     const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
     const [analysisError, setAnalysisError] = useState<string | null>(null);
     const [analyzing, setAnalyzing] = useState(false);
+
+    // AI Chat state
+    const [aiResponse, setAiResponse] = useState<string | null>(null);
+    const [isAskingAI, setIsAskingAI] = useState(false);
+
     const [scores, setScores] = useState<Map<string, number>>(new Map());
     const [legendCollapsed, setLegendCollapsed] = useState(false);
     const [mapReady, setMapReady] = useState(false);
@@ -276,6 +281,31 @@ export default function MapPage() {
         }
     }, [scores, tier]);
 
+    const handleAskAI = async () => {
+        if (!searchQuery.trim() || isAskingAI) return;
+        setIsAskingAI(true);
+        setAiResponse(null);
+        setShowResults(true);
+        try {
+            const res = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: searchQuery, restaurants })
+            });
+            const data = await res.json();
+            if (data.text) {
+                setAiResponse(data.text);
+            } else {
+                setAiResponse(data.error || "Failed to get AI response.");
+            }
+        } catch (e) {
+            console.error("Ask AI error:", e);
+            setAiResponse("An error occurred while contacting the AI.");
+        } finally {
+            setIsAskingAI(false);
+        }
+    };
+
     // Search debounce with local + fallback API
     useEffect(() => {
         if (!searchQuery.trim()) {
@@ -435,23 +465,48 @@ export default function MapPage() {
                         )}
                         <input
                             type="text"
-                            placeholder="Search any restaurant…"
+                            placeholder="Search any restaurant or ask AI…"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onFocus={() => searchResults.length > 0 && setShowResults(true)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    handleAskAI();
+                                }
+                            }}
                             enterKeyHint="search"
                             autoComplete="off"
                             autoCorrect="off"
                             spellCheck="false"
                         />
                         {searchQuery && (
-                            <button
-                                onClick={() => { setSearchQuery(""); setShowResults(false); setSearchResults([]); }}
-                                className="search-clear-btn"
-                                aria-label="Clear search"
-                            >
-                                <X size={14} />
-                            </button>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                <button
+                                    onClick={handleAskAI}
+                                    title="Ask Anglap AI"
+                                    disabled={isAskingAI}
+                                    style={{
+                                        background: "none",
+                                        border: "none",
+                                        color: "#a855f7",
+                                        cursor: "pointer",
+                                        padding: "4px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center"
+                                    }}
+                                >
+                                    {isAskingAI ? <Loader2 size={16} className="search-spinner" color="#a855f7" /> : <Sparkles size={16} />}
+                                </button>
+                                <div style={{ width: 1, height: 16, background: "var(--border)" }} />
+                                <button
+                                    onClick={() => { setSearchQuery(""); setShowResults(false); setSearchResults([]); setAiResponse(null); }}
+                                    className="search-clear-btn"
+                                    aria-label="Clear search"
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
                         )}
                     </div>
 
@@ -468,8 +523,23 @@ export default function MapPage() {
                     </button>
                 </div>
 
-                {showResults && searchResults.length > 0 && (
+                {(showResults && (searchResults.length > 0 || isAskingAI || aiResponse || searchQuery)) && (
                     <div className="search-results">
+                        {(isAskingAI || aiResponse) && (
+                            <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)", background: "rgba(168, 85, 247, 0.05)" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", color: "#a855f7", fontWeight: 600, fontSize: "13px" }}>
+                                    <Sparkles size={14} /> Anglap AI Assistant
+                                </div>
+                                {isAskingAI ? (
+                                    <div style={{ fontSize: "13px", color: "var(--text-muted)" }}>Thinking...</div>
+                                ) : (
+                                    <div style={{ fontSize: "13px", color: "var(--text-primary)", lineHeight: 1.5 }}>
+                                        {aiResponse}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {searchResults.map((r, i) => (
                             <div
                                 key={r.place_id || r.id || i}
@@ -488,6 +558,12 @@ export default function MapPage() {
                                 </div>
                             </div>
                         ))}
+
+                        {!isAskingAI && !aiResponse && searchResults.length === 0 && searchQuery && (
+                            <div style={{ padding: "16px", textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
+                                No restaurants found. Try asking the AI!
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
