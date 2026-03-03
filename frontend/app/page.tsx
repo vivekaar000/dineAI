@@ -450,7 +450,7 @@ export default function MapPage() {
             {/* Brand badge */}
             <div className={`brand-badge ${mapReady ? "brand-badge--visible" : ""}`}>
                 <div className="brand-badge__dot" />
-                <span className="brand-badge__name">Praxis Loci</span>
+                <span className="brand-badge__name">Praxis AI</span>
                 <span className="brand-badge__tagline">Restaurant Intelligence</span>
             </div>
 
