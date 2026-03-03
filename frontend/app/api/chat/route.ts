@@ -22,7 +22,7 @@ export async function POST(req: Request) {
         // Use a fast model
         const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
-        const prompt = `You are an AI assistant for Dine AI, a platform that helps users find and analyze restaurants.
+        const prompt = `You are an AI assistant for Praxis Loci, a platform that helps users find and analyze restaurants.
 Users can ask for restaurant recommendations, about the data, or general food advice.
 
 Available restaurant data context (Top records, abbreviated): 

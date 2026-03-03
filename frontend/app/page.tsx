@@ -232,19 +232,19 @@ export default function MapPage() {
         // Enforce rate limiting based on tier
         if (tier === "free") {
             const today = new Date().toDateString();
-            const storedDate = localStorage.getItem("dineai_search_date");
+            const storedDate = localStorage.getItem("praxisloci_search_date");
             let count = 0;
             if (storedDate === today) {
-                count = parseInt(localStorage.getItem("dineai_search_count") || "0");
+                count = parseInt(localStorage.getItem("praxisloci_search_count") || "0");
             } else {
-                localStorage.setItem("dineai_search_date", today);
+                localStorage.setItem("praxisloci_search_date", today);
             }
             if (count >= 3) {
                 setAnalysisError("Daily limit of 3 AI Searches reached on the Free tier. Upgrade to Local Insider to unlock unlimited AI analysis & premium signals.");
                 setAnalyzing(false);
                 return;
             }
-            localStorage.setItem("dineai_search_count", (count + 1).toString());
+            localStorage.setItem("praxisloci_search_count", (count + 1).toString());
         }
 
         try {
@@ -450,12 +450,13 @@ export default function MapPage() {
             {/* Brand badge */}
             <div className={`brand-badge ${mapReady ? "brand-badge--visible" : ""}`}>
                 <div className="brand-badge__dot" />
-                <span className="brand-badge__name">Dine AI</span>
+                <span className="brand-badge__name">Praxis Loci</span>
                 <span className="brand-badge__tagline">Restaurant Intelligence</span>
             </div>
 
             {/* Top Navigation */}
             <div className={`top-nav ${mapReady ? "top-nav--visible" : ""}`}>
+                <a href="/about">About</a>
                 <a href="/pricing">Pricing</a>
                 <a href="/dashboard" className="nav-primary">Dashboard</a>
             </div>
@@ -489,7 +490,7 @@ export default function MapPage() {
                             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                                 <button
                                     onClick={handleAskAI}
-                                    title="Ask Dine AI"
+                                    title="Ask Praxis Loci"
                                     disabled={isAskingAI}
                                     style={{
                                         background: "none",
@@ -534,7 +535,7 @@ export default function MapPage() {
                         {(isAskingAI || aiResponse) && (
                             <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)", background: "rgba(168, 85, 247, 0.05)" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", color: "#a855f7", fontWeight: 600, fontSize: "13px" }}>
-                                    <Sparkles size={14} /> Dine AI Assistant
+                                    <Sparkles size={14} /> Praxis Loci Assistant
                                 </div>
                                 {isAskingAI ? (
                                     <div style={{ fontSize: "13px", color: "var(--text-muted)" }}>Thinking...</div>

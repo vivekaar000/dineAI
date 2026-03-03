@@ -2,12 +2,12 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-    title: "Dine AI — Restaurant Intelligence",
+    title: "Praxis Loci — Restaurant Intelligence",
     description: "AI-powered Tourist Targeting Score — data-driven restaurant intelligence system",
     appleWebApp: {
         capable: true,
         statusBarStyle: "black-translucent",
-        title: "Dine AI",
+        title: "Praxis Loci",
     },
 };
 

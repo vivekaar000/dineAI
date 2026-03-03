@@ -69,7 +69,7 @@ export default function DashboardPage() {
                         <div className="dashboard-brand-dot">
                             <div className="dashboard-brand-inner-dot"></div>
                         </div>
-                        Dine AI
+                        Praxis Loci
                     </a>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                         <a href="/" style={{ fontSize: '0.875rem', fontWeight: 500, color: 'white', textDecoration: 'none' }}>
