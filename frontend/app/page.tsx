@@ -56,6 +56,7 @@ export default function MapPage() {
     const selectedKeyRef = useRef<string | null>(null);
 
     const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+    const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<Restaurant[]>([]);
     const [showResults, setShowResults] = useState(false);
@@ -280,6 +281,7 @@ export default function MapPage() {
         selectedKeyRef.current = key;
         const marker = markersRef.current.get(key);
         marker?.setIcon(makeIcon(getMarkerColor(scores.get(key)), true));
+        setSelectedRestaurant(r);
 
         mapInstanceRef.current?.panTo([r.lat, r.lng], { animate: true, duration: 0.5 });
 
@@ -374,7 +376,8 @@ export default function MapPage() {
                 body: JSON.stringify({
                     query: searchQuery,
                     restaurants,
-                    currentAnalysis: analysis
+                    currentAnalysis: analysis,
+                    selectedRestaurant: selectedRestaurant
                 })
             });
             const data = await res.json();
