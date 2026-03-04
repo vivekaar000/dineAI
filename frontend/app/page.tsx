@@ -371,7 +371,11 @@ export default function MapPage() {
             const res = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query: searchQuery, restaurants })
+                body: JSON.stringify({
+                    query: searchQuery,
+                    restaurants,
+                    currentAnalysis: analysis
+                })
             });
             const data = await res.json();
             if (data.text) {

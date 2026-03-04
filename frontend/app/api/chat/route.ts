@@ -13,7 +13,7 @@ export async function POST(req: Request) {
             );
         }
 
-        const { query, restaurants } = await req.json();
+        const { query, restaurants, currentAnalysis } = await req.json();
 
         if (!query) {
             return NextResponse.json({ error: "Query is required" }, { status: 400 });
@@ -22,8 +22,12 @@ export async function POST(req: Request) {
         // Use a fast model
         const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
+        const currentlyViewing = currentAnalysis
+            ? `\nCurrently Selected Restaurant (The user is looking at this right now!):\n${JSON.stringify(currentAnalysis, null, 2)}\n`
+            : "";
+
         const prompt = `You are an AI assistant for Praxis Loci, a platform that helps users find and analyze restaurants.
-Users can ask for restaurant recommendations, about the data, or general food advice.
+Users can ask for restaurant recommendations, about the data, or general food advice.${currentlyViewing}
 
 Available restaurant data context (Top records, abbreviated): 
 ${JSON.stringify((restaurants || []).slice(0, 10), null, 2)}
