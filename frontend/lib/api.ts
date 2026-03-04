@@ -37,6 +37,7 @@ export interface AnalysisResult {
     tts_score: number;
     local_authenticity_score: number;
     predicted_label: "local" | "mixed" | "tourist";
+    gemini_reasoning?: string;
     signals: {
         review_linguistics: SignalScore;
         tourist_density: SignalScore;

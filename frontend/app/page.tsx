@@ -351,6 +351,27 @@ export default function MapPage() {
                 return;
             }
 
+            try {
+                // Secondary pass: Use Gemini LLM to review the heuristic score & provide higher accuracy
+                const geminiReq = await fetch("/api/gemini-score", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ analysis: result, restaurant: r }),
+                });
+
+                if (geminiReq.ok) {
+                    const refined = await geminiReq.json();
+                    if (refined.tts_score !== undefined) {
+                        result.tts_score = refined.tts_score;
+                        result.local_authenticity_score = refined.local_authenticity_score;
+                        result.predicted_label = refined.predicted_label;
+                        result.gemini_reasoning = refined.reasoning;
+                    }
+                }
+            } catch (err) {
+                console.error("Gemini refinement failed:", err);
+            }
+
             setAnalysis(result);
 
             const score = result.tts_score;

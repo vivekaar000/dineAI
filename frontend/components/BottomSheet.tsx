@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { X, TrendingUp, BarChart3, CheckCircle, Lock } from "lucide-react";
+import { X, TrendingUp, BarChart3, CheckCircle, Lock, Sparkles } from "lucide-react";
 import ScoreRing from "./ScoreRing";
 import SignalRadar from "./SignalRadar";
 import SignalBar from "./SignalBar";
@@ -263,6 +263,16 @@ export default function BottomSheet({ analysis, loading, error, onClose, tier = 
                         <div className="tab-content" key={tabKey}>
                             {tab === "overview" && (
                                 <>
+                                    {analysis.gemini_reasoning && (
+                                        <div style={{ padding: "16px", marginBottom: "16px", borderRadius: "12px", background: "rgba(168, 85, 247, 0.08)", border: "1px solid rgba(168, 85, 247, 0.2)" }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#a855f7", fontWeight: 700, fontSize: 13, marginBottom: 8 }}>
+                                                <Sparkles size={14} /> AI Verification
+                                            </div>
+                                            <div style={{ fontSize: 13, color: "var(--text-primary)", lineHeight: 1.5 }}>
+                                                {analysis.gemini_reasoning}
+                                            </div>
+                                        </div>
+                                    )}
                                     {/* Signal cards grid */}
                                     <div className="signal-grid">
                                         {SIGNAL_KEYS.map((key, index) => {
