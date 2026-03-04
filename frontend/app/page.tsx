@@ -606,7 +606,12 @@ export default function MapPage() {
             />
 
             {/* Brand badge */}
-            <LiquidGlass tiltMax={8} glareOpacity={0.12}>
+            <LiquidGlass tiltMax={8} glareOpacity={0.12} style={{
+                position: "fixed",
+                top: "calc(16px + var(--safe-top, 0px))",
+                left: "calc(16px + var(--safe-left, 0px))",
+                zIndex: 1001,
+            }}>
                 <div className={`brand-badge ${mapReady ? "brand-badge--visible" : ""}`}>
                     <div className="brand-badge__dot" />
                     <span className="brand-badge__name">Praxis AI</span>
