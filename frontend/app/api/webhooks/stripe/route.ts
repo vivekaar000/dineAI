@@ -49,13 +49,13 @@ export async function POST(req: Request) {
         // Update the Supabase User record securely via Service Role
         const { error } = await getSupabase()
             .from("users")
-            .update({
+            .upsert({
+                id: userUuid,
                 subscription_tier: newTier,
                 stripe_customer_id: session.customer as string,
                 stripe_subscription_id: session.subscription as string,
                 updated_at: new Date().toISOString(),
-            })
-            .eq("id", userUuid);
+            });
 
         if (error) {
             console.error("Supabase update failed:", error);

@@ -85,6 +85,15 @@ export default function MapPage() {
     const [user, setUser] = useState<any>(null);
     const [tier, setTier] = useState<string>("free");
 
+    // Fix stale closures in map marker callbacks
+    const userRef = useRef<any>(null);
+    const tierRef = useRef<string>("free");
+
+    useEffect(() => {
+        userRef.current = user;
+        tierRef.current = tier;
+    }, [user, tier]);
+
     // Helper to fetch tier — uses server-side API to bypass RLS
     const fetchTier = useCallback(async (userId: string) => {
         try {
@@ -278,13 +287,14 @@ export default function MapPage() {
         setAnalysisError(null);
         setAnalyzing(true);
 
-        // Enforce rate limiting based on tier
-        let currentTier = tier;
+        // Enforce rate limiting based on fresh values from refs
+        let currentTier = tierRef.current;
+        const currentUser = userRef.current;
 
         // If tier is still "free", double-check with server (handles async race)
-        if (currentTier === "free" && user?.id) {
+        if (currentTier === "free" && currentUser?.id) {
             try {
-                const res = await fetch(`/api/user-tier?userId=${user.id}`);
+                const res = await fetch(`/api/user-tier?userId=${currentUser.id}`);
                 if (res.ok) {
                     const json = await res.json();
                     if (json.tier) {
@@ -295,7 +305,7 @@ export default function MapPage() {
             } catch { /* proceed with cached tier */ }
         }
 
-        if (currentTier === "free" || !user) {
+        if (currentTier === "free" || !currentUser) {
             const today = new Date().toDateString();
             const storedDate = localStorage.getItem("praxisloci_search_date");
             let count = 0;
