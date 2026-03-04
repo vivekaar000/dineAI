@@ -1,19 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, ArrowRight, Shield, Zap, ChevronDown, CheckCircle2 } from "lucide-react";
+import { createBrowserClient } from '@supabase/ssr';
 
 export default function PricingPage() {
     const [isYearly, setIsYearly] = useState(false);
     const [openFaq, setOpenFaq] = useState<number | null>(null);
+    const [userId, setUserId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const getUser = async () => {
+            if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+            const supabase = createBrowserClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+            );
+            const { data } = await supabase.auth.getUser();
+            if (data?.user) setUserId(data.user.id);
+        };
+        getUser();
+    }, []);
 
     const handleCheckout = async (priceId: string) => {
         try {
             const response = await fetch("/api/checkout_sessions", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ priceId, isYearly }),
+                body: JSON.stringify({ priceId, isYearly, userId }),
             });
             const data = await response.json();
             if (data.url) {

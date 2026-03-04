@@ -11,7 +11,7 @@ function getStripe() {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { priceId, isYearly } = body;
+        const { priceId, isYearly, userId } = body;
 
         // Ensure keys exist
         if (!process.env.STRIPE_SECRET_KEY) {
@@ -45,8 +45,7 @@ export async function POST(req: Request) {
         const session = await getStripe().checkout.sessions.create({
             payment_method_types: ["card"],
             mode: "subscription",
-            // TODO: In production, pass the actual Supabase user UUID here to sync gracefully via Webhooks
-            // client_reference_id: "USER_UUID_FROM_SUPABASE",
+            client_reference_id: userId || undefined,
             line_items: [
                 {
                     price: exactStripePriceId,

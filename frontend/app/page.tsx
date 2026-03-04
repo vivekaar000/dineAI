@@ -77,28 +77,62 @@ export default function MapPage() {
     const [user, setUser] = useState<any>(null);
     const [tier, setTier] = useState<string>("free");
 
+    // Helper to fetch tier from Supabase
+    const fetchTier = useCallback(async (userId: string) => {
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+        const supabase = createBrowserClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+        const { data: profile } = await supabase
+            .from("users")
+            .select("subscription_tier")
+            .eq("id", userId)
+            .single();
+        if (profile?.subscription_tier) {
+            setTier(profile.subscription_tier);
+        }
+    }, []);
+
     useEffect(() => {
-        const fetchUser = async () => {
-            if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-            const supabase = createBrowserClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-            );
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+        const supabase = createBrowserClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+
+        // Initial fetch
+        const init = async () => {
             const { data } = await supabase.auth.getUser();
             if (data?.user) {
                 setUser(data.user);
-                const { data: profile } = await supabase
-                    .from("users")
-                    .select("subscription_tier")
-                    .eq("id", data.user.id)
-                    .single();
-                if (profile?.subscription_tier) {
-                    setTier(profile.subscription_tier);
-                }
+                fetchTier(data.user.id);
             }
         };
-        fetchUser();
-    }, []);
+        init();
+
+        // Listen for auth state changes (login/logout)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+                setUser(session.user);
+                fetchTier(session.user.id);
+            } else {
+                setUser(null);
+                setTier("free");
+            }
+        });
+
+        // Re-fetch tier whenever the tab regains focus (catches Stripe redirect back)
+        const handleFocus = () => {
+            if (user?.id) fetchTier(user.id);
+        };
+        window.addEventListener("focus", handleFocus);
+
+        return () => {
+            subscription.unsubscribe();
+            window.removeEventListener("focus", handleFocus);
+        };
+    }, [fetchTier, user?.id]);
 
     // Initialize map
     useEffect(() => {
@@ -458,7 +492,31 @@ export default function MapPage() {
             <div className={`top-nav ${mapReady ? "top-nav--visible" : ""}`}>
                 <a href="/about">About</a>
                 <a href="/pricing">Pricing</a>
-                <a href="/dashboard" className="nav-primary">Dashboard</a>
+                {user ? (
+                    <>
+                        {tier !== "free" && (
+                            <span style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.08em",
+                                padding: "4px 10px",
+                                borderRadius: "9999px",
+                                background: tier === "premium" ? "rgba(139, 92, 246, 0.2)" : "rgba(79, 195, 247, 0.2)",
+                                color: tier === "premium" ? "#a78bfa" : "#4fc3f7",
+                                border: `1px solid ${tier === "premium" ? "rgba(139, 92, 246, 0.3)" : "rgba(79, 195, 247, 0.3)"}`,
+                            }}>
+                                {tier === "premium" ? "Analyst" : "Insider"}
+                            </span>
+                        )}
+                        <a href="/dashboard" className="nav-primary">Dashboard</a>
+                    </>
+                ) : (
+                    <>
+                        <a href="/login?tab=signin">Sign In</a>
+                        <a href="/login?tab=signup" className="nav-primary">Sign Up</a>
+                    </>
+                )}
             </div>
 
             {/* Search overlay */}
