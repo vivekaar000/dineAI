@@ -13,6 +13,15 @@ export interface Restaurant {
     google_rating?: number;
     price_level?: number;
     is_osm?: boolean;
+    // Dietary tags from OSM
+    diet_vegan?: boolean;
+    diet_vegetarian?: boolean;
+    diet_halal?: boolean;
+    diet_kosher?: boolean;
+    diet_gluten_free?: boolean;
+    diet_lactose_free?: boolean;
+    diet_dairy_free?: boolean;
+    organic?: boolean;
 }
 
 export interface SignalScore {
@@ -106,4 +115,54 @@ export async function getValidationStats(): Promise<ValidationStats> {
     const res = await fetch(`${API_URL}/api/validate/stats`);
     if (!res.ok) throw new Error("Failed to fetch stats");
     return res.json();
+}
+
+// Fetch restaurants with dietary data from OpenStreetMap Overpass API
+export async function fetchOsmWithDietary(
+    south: number,
+    west: number,
+    north: number,
+    east: number
+): Promise<Restaurant[]> {
+    const bbox = `${south},${west},${north},${east}`;
+    const query = `
+[out:json][timeout:25];
+(
+  node["amenity"="restaurant"](${bbox});
+  node["amenity"="cafe"](${bbox});
+  node["amenity"="fast_food"](${bbox});
+);
+out body;
+`.trim();
+
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `data=${encodeURIComponent(query)}`,
+    });
+
+    if (!res.ok) throw new Error("Overpass API failed");
+    const data = await res.json();
+
+    return (data.elements || []).map((el: any) => {
+        const tags = el.tags || {};
+        const yesOrOnly = (v?: string) => v === "yes" || v === "only";
+        return {
+            id: el.id,
+            name: tags.name || "Unknown",
+            cuisine: tags.cuisine || "",
+            lat: el.lat,
+            lng: el.lon,
+            address: [tags["addr:housenumber"], tags["addr:street"]].filter(Boolean).join(" ") || undefined,
+            is_osm: true,
+            diet_vegan: yesOrOnly(tags["diet:vegan"]),
+            diet_vegetarian: yesOrOnly(tags["diet:vegetarian"]),
+            diet_halal: yesOrOnly(tags["diet:halal"]),
+            diet_kosher: yesOrOnly(tags["diet:kosher"]),
+            diet_gluten_free: yesOrOnly(tags["diet:gluten_free"]),
+            diet_lactose_free: yesOrOnly(tags["diet:lactose_free"]),
+            diet_dairy_free: yesOrOnly(tags["diet:dairy_free"]),
+            organic: yesOrOnly(tags.organic),
+        } as Restaurant;
+    });
 }

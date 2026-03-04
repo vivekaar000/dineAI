@@ -6,6 +6,7 @@ import LiquidGlass from "@/components/LiquidGlass";
 import DietaryFilters, { FILTERS } from "@/components/DietaryFilters";
 import {
     fetchRestaurants,
+    fetchOsmWithDietary,
     placesSearch,
     analyzeRestaurant,
     analyzeLivePlace,
@@ -201,22 +202,30 @@ export default function MapPage() {
         try {
             // Fetch backend DB
             const dbPromise = fetchRestaurants().catch(() => [] as Restaurant[]);
-            // Fetch comprehensive local OSM data
-            const osmPromise = fetch("/nashville_restaurants.json").then(r => r.json()).catch(() => [] as Restaurant[]);
+            // Fetch live OSM data with dietary tags via Overpass API
+            const bounds = map.getBounds();
+            const osmPromise = fetchOsmWithDietary(
+                bounds.getSouth(),
+                bounds.getWest(),
+                bounds.getNorth(),
+                bounds.getEast()
+            ).catch(() =>
+                // Fallback to static file if Overpass fails
+                fetch("/nashville_restaurants.json").then(r => r.json()).catch(() => [] as Restaurant[])
+            );
 
             const [dbData, osmData] = await Promise.all([dbPromise, osmPromise]);
 
             // Merge and deduplicate (favor DB data since it has real IDs and place_ids)
-            // Deduplicate by rounding coordinates to ~11m precision (3 decimal places) to catch slight variations
             const merged = new Map<string, Restaurant>();
 
-            // Add OSM data first
+            // Add OSM data first (now with dietary tags)
             osmData.forEach((r: any) => {
-                if (!r.lat || !r.lng) return;
+                if (!r.lat || !r.lng || !r.name || r.name === "Unknown") return;
                 const dedupKey = `${r.name.toLowerCase().trim()}_${r.lat.toFixed(3)}_${r.lng.toFixed(3)}`;
                 merged.set(dedupKey, {
                     ...r,
-                    id: Math.floor(Math.random() * 1000000) + 10000, // Fake ID for OSM records
+                    id: r.id || Math.floor(Math.random() * 1000000) + 10000,
                     is_osm: true
                 });
             });
@@ -426,13 +435,38 @@ export default function MapPage() {
     // -- Dietary filter logic: show/hide markers based on active filters --
     const matchesFilters = useCallback((r: Restaurant, filters: Set<string>): boolean => {
         if (filters.size === 0) return true;
-        const text = `${r.name} ${r.cuisine || ""}`.toLowerCase();
         const filterIds = Array.from(filters);
+
+        // Check real OSM dietary boolean fields first, then fall back to keyword matching
         for (const filterId of filterIds) {
+            // Direct boolean field match from OSM data
+            switch (filterId) {
+                case "vegan":
+                    if (r.diet_vegan) return true;
+                    break;
+                case "vegetarian":
+                    if (r.diet_vegetarian) return true;
+                    break;
+                case "halal":
+                    if (r.diet_halal) return true;
+                    break;
+                case "kosher":
+                    if (r.diet_kosher) return true;
+                    break;
+                case "gluten_free":
+                    if (r.diet_gluten_free) return true;
+                    break;
+                case "organic":
+                    if (r.organic) return true;
+                    break;
+            }
+
+            // Keyword fallback for cuisine text matching (seafood, asian, latin, mediterranean, etc.)
             const filter = FILTERS.find(f => f.id === filterId);
             if (!filter) continue;
+            const text = `${r.name} ${r.cuisine || ""}`.toLowerCase();
             if (filter.keywords.some(kw => text.includes(kw))) {
-                return true; // OR logic: match any active filter
+                return true;
             }
         }
         return false;
