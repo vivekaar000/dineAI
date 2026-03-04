@@ -32,7 +32,6 @@ export default function LiquidGlass({
     disabled = false,
 }: LiquidGlassProps) {
     const wrapRef = useRef<HTMLDivElement>(null);
-    const glareRef = useRef<HTMLDivElement>(null);
     const bounds = useRef<DOMRect | null>(null);
     const raf = useRef<number>(0);
     const pressing = useRef(false);
@@ -54,13 +53,7 @@ export default function LiquidGlass({
 
         wrapRef.current.style.transform =
             `perspective(600px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(${scale},${scale},1)`;
-
-        // Move glare highlight to follow cursor
-        if (glareRef.current) {
-            glareRef.current.style.background =
-                `radial-gradient(circle at ${px * 100}% ${py * 100}%, rgba(255,255,255,${glareOpacity}), transparent 60%)`;
-        }
-    }, [tiltMax, glareOpacity, scaleFactor, disabled]);
+    }, [tiltMax, scaleFactor, disabled]);
 
     const onEnter = useCallback(() => {
         if (!wrapRef.current || disabled) return;
@@ -79,9 +72,6 @@ export default function LiquidGlass({
         cancelAnimationFrame(raf.current);
         wrapRef.current.style.transition = "transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)";
         wrapRef.current.style.transform = "perspective(600px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)";
-        if (glareRef.current) {
-            glareRef.current.style.background = "transparent";
-        }
     }, [disabled]);
 
     const onDown = useCallback(() => {
@@ -150,18 +140,6 @@ export default function LiquidGlass({
             }}
         >
             {children}
-            {/* Glare overlay */}
-            <div
-                ref={glareRef}
-                style={{
-                    position: "absolute",
-                    inset: 0,
-                    pointerEvents: "none",
-                    borderRadius: "inherit",
-                    zIndex: 2,
-                    transition: "background 0.15s ease",
-                }}
-            />
         </div>
     );
 }
