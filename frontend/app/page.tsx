@@ -263,7 +263,23 @@ export default function MapPage() {
         setAnalyzing(true);
 
         // Enforce rate limiting based on tier
-        if (tier === "free") {
+        let currentTier = tier;
+
+        // If tier is still "free", double-check with server (handles async race)
+        if (currentTier === "free" && user?.id) {
+            try {
+                const res = await fetch(`/api/user-tier?userId=${user.id}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.tier) {
+                        currentTier = json.tier;
+                        setTier(json.tier);
+                    }
+                }
+            } catch { /* proceed with cached tier */ }
+        }
+
+        if (currentTier === "free") {
             const today = new Date().toDateString();
             const storedDate = localStorage.getItem("praxisloci_search_date");
             let count = 0;
