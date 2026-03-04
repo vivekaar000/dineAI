@@ -77,36 +77,16 @@ export default function MapPage() {
     const [user, setUser] = useState<any>(null);
     const [tier, setTier] = useState<string>("free");
 
-    // Helper to fetch tier from Supabase
+    // Helper to fetch tier — uses server-side API to bypass RLS
     const fetchTier = useCallback(async (userId: string) => {
-        if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
         try {
-            // Try client-side first (works if RLS allows)
-            const supabase = createBrowserClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-            );
-            const { data: profile, error } = await supabase
-                .from("users")
-                .select("subscription_tier")
-                .eq("id", userId)
-                .single();
-
-            if (error) {
-                console.warn("Client-side tier fetch failed (RLS?):", error.message);
-                // Fallback: fetch via server API route
-                const res = await fetch(`/api/user-tier?userId=${userId}`);
-                if (res.ok) {
-                    const json = await res.json();
-                    if (json.tier) {
-                        setTier(json.tier);
-                        return;
-                    }
+            const res = await fetch(`/api/user-tier?userId=${userId}`);
+            if (res.ok) {
+                const json = await res.json();
+                if (json.tier) {
+                    setTier(json.tier);
+                    console.log("Tier loaded:", json.tier);
                 }
-            }
-
-            if (profile?.subscription_tier) {
-                setTier(profile.subscription_tier);
             }
         } catch (err) {
             console.error("Tier fetch error:", err);
