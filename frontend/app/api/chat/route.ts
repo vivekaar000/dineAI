@@ -29,15 +29,15 @@ export async function POST(req: Request) {
                 }\nAssume the user's query refers to this restaurant unless they specify otherwise.\n`;
         }
 
-        const prompt = `You are an AI assistant for Praxis Loci, a platform that helps users find and analyze restaurants.
-Users can ask for restaurant recommendations, about the data, or general food advice.${currentlyViewing}
+        const prompt = `You are an AI assistant integrated into Praxis Loci, a platform for exploring and analyzing restaurants.
+While you have access to local restaurant data, you are a fully capable general AI. You can answer ANY question the user asks, whether it's about the restaurant data, general food advice, geography, history, coding, or anything else entirely. Feel free to use your broader knowledge to offer rich and helpful answers.${currentlyViewing}
 
 Available restaurant data context (Top records, abbreviated): 
 ${JSON.stringify((restaurants || []).slice(0, 10), null, 2)}
 
 User query: ${query}
 
-Provide a short, helpful, and concise response (max 2-3 sentences). Focus on actionable insight.`;
+Provide a helpful, precise, and concise response. Keep it brief (max 3-4 sentences) unless the user asks for more detail. Use markdown formatting where appropriate.`;
 
         const result = await model.generateContent(prompt);
         const text = result.response.text();
