@@ -286,7 +286,7 @@ export default function MapPage() {
             } catch { /* proceed with cached tier */ }
         }
 
-        if (currentTier === "free") {
+        if (currentTier === "free" || !user) {
             const today = new Date().toDateString();
             const storedDate = localStorage.getItem("praxisloci_search_date");
             let count = 0;
@@ -456,7 +456,9 @@ export default function MapPage() {
                 marker.setOpacity(1);
                 count++;
             } else {
-                marker.setOpacity(0.12);
+                if (mapInstanceRef.current!.hasLayer(marker)) {
+                    mapInstanceRef.current!.removeLayer(marker);
+                }
             }
         });
 
