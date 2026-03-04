@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Search, MapPin, X, Loader2, ChevronDown, Compass, Sparkles } from "lucide-react";
 import BottomSheet from "@/components/BottomSheet";
+import LiquidGlass from "@/components/LiquidGlass";
 import {
     fetchRestaurants,
     placesSearch,
@@ -497,16 +498,22 @@ export default function MapPage() {
             />
 
             {/* Brand badge */}
-            <div className={`brand-badge ${mapReady ? "brand-badge--visible" : ""}`}>
-                <div className="brand-badge__dot" />
-                <span className="brand-badge__name">Praxis AI</span>
-                <span className="brand-badge__tagline">Restaurant Intelligence</span>
-            </div>
+            <LiquidGlass tiltMax={8} glareOpacity={0.12}>
+                <div className={`brand-badge ${mapReady ? "brand-badge--visible" : ""}`}>
+                    <div className="brand-badge__dot" />
+                    <span className="brand-badge__name">Praxis AI</span>
+                    <span className="brand-badge__tagline">Restaurant Intelligence</span>
+                </div>
+            </LiquidGlass>
 
             {/* Top Navigation */}
             <div className={`top-nav ${mapReady ? "top-nav--visible" : ""}`}>
-                <a href="/about">About</a>
-                <a href="/pricing">Pricing</a>
+                <LiquidGlass tiltMax={15} glareOpacity={0.2}>
+                    <a href="/about">About</a>
+                </LiquidGlass>
+                <LiquidGlass tiltMax={15} glareOpacity={0.2}>
+                    <a href="/pricing">Pricing</a>
+                </LiquidGlass>
                 {user ? (
                     <>
                         {tier !== "free" && (
@@ -524,12 +531,18 @@ export default function MapPage() {
                                 {tier === "premium" ? "Analyst" : "Insider"}
                             </span>
                         )}
-                        <a href="/dashboard" className="nav-primary">Dashboard</a>
+                        <LiquidGlass tiltMax={15} glareOpacity={0.25}>
+                            <a href="/dashboard" className="nav-primary">Dashboard</a>
+                        </LiquidGlass>
                     </>
                 ) : (
                     <>
-                        <a href="/login?tab=signin">Sign In</a>
-                        <a href="/login?tab=signup" className="nav-primary">Sign Up</a>
+                        <LiquidGlass tiltMax={15} glareOpacity={0.2}>
+                            <a href="/login?tab=signin">Sign In</a>
+                        </LiquidGlass>
+                        <LiquidGlass tiltMax={15} glareOpacity={0.25}>
+                            <a href="/login?tab=signup" className="nav-primary">Sign Up</a>
+                        </LiquidGlass>
                     </>
                 )}
             </div>
