@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { Search, MapPin, X, Loader2, ChevronDown, Compass, Sparkles } from "lucide-react";
 import BottomSheet from "@/components/BottomSheet";
 import LiquidGlass from "@/components/LiquidGlass";
+import DietaryFilters, { FILTERS } from "@/components/DietaryFilters";
 import {
     fetchRestaurants,
     placesSearch,
@@ -68,6 +69,11 @@ export default function MapPage() {
     const [scores, setScores] = useState<Map<string, number>>(new Map());
     const [legendCollapsed, setLegendCollapsed] = useState(false);
     const [mapReady, setMapReady] = useState(false);
+
+    // Dietary filter state
+    const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
+    const [filtersOpen, setFiltersOpen] = useState(false);
+    const [filterMatchCount, setFilterMatchCount] = useState(0);
 
     useEffect(() => {
         if (typeof window !== "undefined" && window.innerWidth < 768) {
@@ -417,6 +423,62 @@ export default function MapPage() {
         return () => clearTimeout(t);
     }, [searchQuery, restaurants]);
 
+    // -- Dietary filter logic: show/hide markers based on active filters --
+    const matchesFilters = useCallback((r: Restaurant, filters: Set<string>): boolean => {
+        if (filters.size === 0) return true;
+        const text = `${r.name} ${r.cuisine || ""}`.toLowerCase();
+        const filterIds = Array.from(filters);
+        for (const filterId of filterIds) {
+            const filter = FILTERS.find(f => f.id === filterId);
+            if (!filter) continue;
+            if (filter.keywords.some(kw => text.includes(kw))) {
+                return true; // OR logic: match any active filter
+            }
+        }
+        return false;
+    }, []);
+
+    useEffect(() => {
+        if (!mapInstanceRef.current) return;
+        let count = 0;
+
+        restaurants.forEach((r) => {
+            const isOsm = r.is_osm === true;
+            const key = isOsm ? `osm-${r.id}` : `db-${r.id}`;
+            const marker = markersRef.current.get(key);
+            if (!marker) return;
+
+            const visible = matchesFilters(r, activeFilters);
+            if (visible) {
+                if (!mapInstanceRef.current!.hasLayer(marker)) {
+                    marker.addTo(mapInstanceRef.current!);
+                }
+                marker.setOpacity(1);
+                count++;
+            } else {
+                marker.setOpacity(0.12);
+            }
+        });
+
+        setFilterMatchCount(activeFilters.size === 0 ? restaurants.length : count);
+    }, [activeFilters, restaurants, matchesFilters]);
+
+    const handleToggleFilter = useCallback((filterId: string) => {
+        setActiveFilters(prev => {
+            const next = new Set(prev);
+            if (next.has(filterId)) {
+                next.delete(filterId);
+            } else {
+                next.add(filterId);
+            }
+            return next;
+        });
+    }, []);
+
+    const handleClearFilters = useCallback(() => {
+        setActiveFilters(new Set());
+    }, []);
+
     // Keyboard shortcuts
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
@@ -604,16 +666,71 @@ export default function MapPage() {
                     </div>
 
                     {/* Advanced Dietary Filters Button */}
-                    <button
-                        onClick={() => tier === "free" ? window.location.href = "/pricing" : alert("Advanced dietary filters opened")}
-                        style={{ flexShrink: 0, width: "48px", height: "48px", borderRadius: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", cursor: "pointer", backdropFilter: "blur(20px)", pointerEvents: "auto" }}
-                        title="Advanced Dietary Filters"
-                    >
-                        <div style={{ position: "relative" }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                            {tier === "free" && <span style={{ position: "absolute", top: -8, right: -10, fontSize: "14px", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>🔒</span>}
-                        </div>
-                    </button>
+                    <div style={{ position: "relative", flexShrink: 0 }}>
+                        <LiquidGlass tiltMax={12} glareOpacity={0.2}>
+                            <button
+                                onClick={() => {
+                                    if (tier === "free") {
+                                        window.location.href = "/pricing";
+                                    } else {
+                                        setFiltersOpen(!filtersOpen);
+                                    }
+                                }}
+                                style={{
+                                    width: "48px",
+                                    height: "48px",
+                                    borderRadius: "14px",
+                                    background: activeFilters.size > 0 ? "rgba(79, 195, 247, 0.12)" : "var(--glass-bg)",
+                                    backgroundImage: "var(--glass-shine)",
+                                    border: activeFilters.size > 0 ? "1px solid rgba(79, 195, 247, 0.3)" : "1px solid var(--glass-border)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: activeFilters.size > 0 ? "#4fc3f7" : "white",
+                                    cursor: "pointer",
+                                    backdropFilter: "var(--glass-blur)",
+                                    WebkitBackdropFilter: "var(--glass-blur)",
+                                    pointerEvents: "auto",
+                                    transition: "all 0.3s ease",
+                                    boxShadow: activeFilters.size > 0
+                                        ? "0 0 16px rgba(79, 195, 247, 0.1), inset 0 1px 0 rgba(255,255,255,0.08)"
+                                        : "inset 0 1px 0 rgba(255,255,255,0.04)",
+                                }}
+                                title="Dietary Filters"
+                            >
+                                <div style={{ position: "relative" }}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                                    {tier === "free" && <span style={{ position: "absolute", top: -8, right: -10, fontSize: "14px", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>🔒</span>}
+                                    {activeFilters.size > 0 && tier !== "free" && (
+                                        <span style={{
+                                            position: "absolute",
+                                            top: -8,
+                                            right: -10,
+                                            background: "#4fc3f7",
+                                            color: "#000",
+                                            fontSize: "10px",
+                                            fontWeight: 800,
+                                            width: "16px",
+                                            height: "16px",
+                                            borderRadius: "50%",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                        }}>{activeFilters.size}</span>
+                                    )}
+                                </div>
+                            </button>
+                        </LiquidGlass>
+
+                        <DietaryFilters
+                            isOpen={filtersOpen}
+                            onClose={() => setFiltersOpen(false)}
+                            activeFilters={activeFilters}
+                            onToggleFilter={handleToggleFilter}
+                            onClearAll={handleClearFilters}
+                            matchCount={filterMatchCount}
+                        />
+                    </div>
                 </div>
 
                 {(showResults && (searchResults.length > 0 || isAskingAI || aiResponse || searchQuery)) && (
