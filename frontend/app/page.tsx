@@ -649,6 +649,21 @@ export default function MapPage() {
 
             {/* Top Navigation */}
             <div className={`top-nav ${mapReady ? "top-nav--visible" : ""}`}>
+                {user && tier !== "free" && (
+                    <span style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        padding: "4px 10px",
+                        borderRadius: "9999px",
+                        background: tier === "premium" ? "rgba(139, 92, 246, 0.2)" : "rgba(79, 195, 247, 0.2)",
+                        color: tier === "premium" ? "#a78bfa" : "#4fc3f7",
+                        border: `1px solid ${tier === "premium" ? "rgba(139, 92, 246, 0.3)" : "rgba(79, 195, 247, 0.3)"}`,
+                    }}>
+                        {tier === "premium" ? "Analyst" : "Insider"}
+                    </span>
+                )}
                 <LiquidGlass tiltMax={15} glareOpacity={0.2}>
                     <a href="/about">About</a>
                 </LiquidGlass>
@@ -656,26 +671,9 @@ export default function MapPage() {
                     <a href="/pricing">Pricing</a>
                 </LiquidGlass>
                 {user ? (
-                    <>
-                        {tier !== "free" && (
-                            <span style={{
-                                fontSize: 10,
-                                fontWeight: 700,
-                                textTransform: "uppercase",
-                                letterSpacing: "0.08em",
-                                padding: "4px 10px",
-                                borderRadius: "9999px",
-                                background: tier === "premium" ? "rgba(139, 92, 246, 0.2)" : "rgba(79, 195, 247, 0.2)",
-                                color: tier === "premium" ? "#a78bfa" : "#4fc3f7",
-                                border: `1px solid ${tier === "premium" ? "rgba(139, 92, 246, 0.3)" : "rgba(79, 195, 247, 0.3)"}`,
-                            }}>
-                                {tier === "premium" ? "Analyst" : "Insider"}
-                            </span>
-                        )}
-                        <LiquidGlass tiltMax={15} glareOpacity={0.25}>
-                            <a href="/dashboard" className="nav-primary">Dashboard</a>
-                        </LiquidGlass>
-                    </>
+                    <LiquidGlass tiltMax={15} glareOpacity={0.25}>
+                        <a href="/dashboard" className="nav-primary">Dashboard</a>
+                    </LiquidGlass>
                 ) : (
                     <>
                         <LiquidGlass tiltMax={15} glareOpacity={0.2}>
