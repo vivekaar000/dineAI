@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createBrowserClient } from '@supabase/ssr';
+import { getSupabaseBrowser } from '@/lib/supabase';
 import { LogOut, CreditCard, Settings, User, Shield } from "lucide-react";
 
 export default function DashboardPage() {
@@ -22,10 +22,7 @@ export default function DashboardPage() {
     useEffect(() => {
         const fetchUser = async () => {
             if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-            const supabase = createBrowserClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-            );
+            const supabase = getSupabaseBrowser();
             const { data } = await supabase.auth.getUser();
             if (data?.user) {
                 setUser(data.user);
@@ -52,10 +49,7 @@ export default function DashboardPage() {
 
     const handleLogout = async () => {
         if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-        const supabase = createBrowserClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
+        const supabase = getSupabaseBrowser();
         await supabase.auth.signOut();
         window.location.href = "/";
     };

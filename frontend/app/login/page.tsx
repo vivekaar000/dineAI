@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, Lock, Mail, Shield } from "lucide-react";
-import { createBrowserClient } from '@supabase/ssr'
+import { getSupabaseBrowser } from '@/lib/supabase'
 
 function LoginContent() {
     const searchParams = useSearchParams();
@@ -25,10 +25,7 @@ function LoginContent() {
             return;
         }
 
-        const supabase = createBrowserClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
+        const supabase = getSupabaseBrowser();
 
         const { error } = isSignup
             ? await supabase.auth.signUp({ email, password })

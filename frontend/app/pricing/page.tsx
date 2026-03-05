@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, ArrowRight, Shield, Zap, ChevronDown, CheckCircle2 } from "lucide-react";
-import { createBrowserClient } from '@supabase/ssr';
+import { getSupabaseBrowser } from '@/lib/supabase';
 
 export default function PricingPage() {
     const [isYearly, setIsYearly] = useState(false);
@@ -13,10 +13,7 @@ export default function PricingPage() {
     useEffect(() => {
         const getUser = async () => {
             if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-            const supabase = createBrowserClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-            );
+            const supabase = getSupabaseBrowser();
             const { data } = await supabase.auth.getUser();
             if (data?.user) setUserId(data.user.id);
         };

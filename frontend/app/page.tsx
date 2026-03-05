@@ -13,7 +13,7 @@ import {
     Restaurant,
     AnalysisResult,
 } from "@/lib/api";
-import { createBrowserClient } from '@supabase/ssr';
+import { getSupabaseBrowser } from '@/lib/supabase';
 
 // Leaflet is browser-only — lazy import
 type LeafletType = typeof import("leaflet");
@@ -113,10 +113,7 @@ export default function MapPage() {
 
     useEffect(() => {
         if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-        const supabase = createBrowserClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
+        const supabase = getSupabaseBrowser();
 
         // Initial fetch
         const init = async () => {
@@ -129,7 +126,7 @@ export default function MapPage() {
         init();
 
         // Listen for auth state changes (login/logout)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
             if (session?.user) {
                 setUser(session.user);
                 fetchTier(session.user.id);
