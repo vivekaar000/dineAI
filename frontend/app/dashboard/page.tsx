@@ -5,7 +5,7 @@ import { getSupabaseBrowser } from '@/lib/supabase';
 import { LogOut, MapPin, CreditCard, Shield, Zap, ArrowRight, ChevronRight, Sparkles } from "lucide-react";
 import dynamic from 'next/dynamic';
 
-const UnicornScene = dynamic(() => import('unicornstudio-react'), { ssr: false });
+const UnicornScene = dynamic(() => import('unicornstudio-react/next'), { ssr: false });
 
 export default function DashboardPage() {
     const [user, setUser] = useState<any>(null);
@@ -94,7 +94,7 @@ export default function DashboardPage() {
                         height="100%"
                         scale={1}
                         dpi={1.5}
-                        sdkUrl="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@2.1.1/dist/unicornStudio.umd.js"
+                        sdkUrl="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.1.1/dist/unicornStudio.umd.js"
                     />
                 )}
             </div>
