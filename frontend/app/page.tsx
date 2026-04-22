@@ -10,10 +10,11 @@ import {
     placesSearch,
     analyzeRestaurant,
     analyzeLivePlace,
+    getPrecomputedAnalysis,
     Restaurant,
     AnalysisResult,
 } from "@/lib/api";
-import { getSupabaseBrowser } from '@/lib/supabase';
+import { useSession } from 'next-auth/react';
 
 // Leaflet is browser-only — lazy import
 type LeafletType = typeof import("leaflet");
@@ -83,7 +84,8 @@ export default function MapPage() {
         }
     }, []);
 
-    const [user, setUser] = useState<any>(null);
+    const { data: session } = useSession();
+    const user = session?.user || null;
     const [tier, setTier] = useState<string>("free");
 
     // Fix stale closures in map marker callbacks
@@ -94,59 +96,6 @@ export default function MapPage() {
         userRef.current = user;
         tierRef.current = tier;
     }, [user, tier]);
-
-    // Helper to fetch tier — uses server-side API to bypass RLS
-    const fetchTier = useCallback(async (userId: string) => {
-        try {
-            const res = await fetch(`/api/user-tier?userId=${userId}`);
-            if (res.ok) {
-                const json = await res.json();
-                if (json.tier) {
-                    setTier(json.tier);
-                    console.log("Tier loaded:", json.tier);
-                }
-            }
-        } catch (err) {
-            console.error("Tier fetch error:", err);
-        }
-    }, []);
-
-    useEffect(() => {
-        if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-        const supabase = getSupabaseBrowser();
-
-        // Initial fetch
-        const init = async () => {
-            const { data } = await supabase.auth.getUser();
-            if (data?.user) {
-                setUser(data.user);
-                fetchTier(data.user.id);
-            }
-        };
-        init();
-
-        // Listen for auth state changes (login/logout)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-            if (session?.user) {
-                setUser(session.user);
-                fetchTier(session.user.id);
-            } else {
-                setUser(null);
-                setTier("free");
-            }
-        });
-
-        // Re-fetch tier whenever the tab regains focus (catches Stripe redirect back)
-        const handleFocus = () => {
-            if (user?.id) fetchTier(user.id);
-        };
-        window.addEventListener("focus", handleFocus);
-
-        return () => {
-            subscription.unsubscribe();
-            window.removeEventListener("focus", handleFocus);
-        };
-    }, [fetchTier, user?.id]);
 
     // Initialize map
     useEffect(() => {
@@ -205,67 +154,95 @@ export default function MapPage() {
         };
     }, []);
 
+    const addMarkersToMap = useCallback((data: Restaurant[], map: import("leaflet").Map, leaflet: LeafletType) => {
+        const newScores = new Map<string, number>();
+        data.forEach((r) => {
+            const isOsm = r.is_osm === true;
+            const key = isOsm ? `osm-${r.id}` : `db-${r.id}`;
+            // Skip if marker already exists on the map
+            if (markersRef.current.has(key)) return;
+            // Use pre-computed score for initial marker color (red/amber/green instead of all-blue)
+            const cachedScore = (r as any).tts_score;
+            const color = getMarkerColor(cachedScore);
+            // Collect scores for batched state update
+            if (cachedScore !== undefined) {
+                newScores.set(key, cachedScore);
+            }
+            const marker = leaflet
+                .marker([r.lat, r.lng], { icon: makeIcon(color, false) })
+                .addTo(map)
+                .bindTooltip(r.name, {
+                    className: "leaflet-tooltip-dark",
+                    direction: "top",
+                })
+                .on("click", () => handleMarkerClick(r, key));
+            markersRef.current.set(key, marker);
+        });
+        // Batch-update scores in a single state call
+        if (newScores.size > 0) {
+            setScores(prev => {
+                const next = new Map(prev);
+                newScores.forEach((v, k) => next.set(k, v));
+                return next;
+            });
+        }
+    }, []);
+
     const loadRestaurants = useCallback(async (map: import("leaflet").Map, leaflet: LeafletType) => {
         try {
-            // Fetch backend DB
-            const dbPromise = fetchRestaurants().catch(() => [] as Restaurant[]);
-            // Fetch live OSM data with dietary tags via Overpass API
+            // ── Phase 1: Show cached restaurants IMMEDIATELY ──
+            const cachedData = await fetchRestaurants().catch(() => [] as Restaurant[]);
+
+            if (cachedData.length > 0) {
+                setRestaurants(cachedData);
+                addMarkersToMap(cachedData, map, leaflet);
+            }
+
+            // ── Phase 2: Load OSM dietary data in the BACKGROUND ──
+            // This does NOT block the map — markers are already visible from Phase 1
             const bounds = map.getBounds();
-            const osmPromise = fetchOsmWithDietary(
+            fetchOsmWithDietary(
                 bounds.getSouth(),
                 bounds.getWest(),
                 bounds.getNorth(),
                 bounds.getEast()
-            ).catch(() =>
-                // Fallback to static file if Overpass fails
-                fetch("/nashville_restaurants.json").then(r => r.json()).catch(() => [] as Restaurant[])
-            );
+            ).then((osmData) => {
+                if (!osmData || osmData.length === 0) return;
 
-            const [dbData, osmData] = await Promise.all([dbPromise, osmPromise]);
-
-            // Merge and deduplicate (favor DB data since it has real IDs and place_ids)
-            const merged = new Map<string, Restaurant>();
-
-            // Add OSM data first (now with dietary tags)
-            osmData.forEach((r: any) => {
-                if (!r.lat || !r.lng || !r.name || r.name === "Unknown") return;
-                const dedupKey = `${r.name.toLowerCase().trim()}_${r.lat.toFixed(3)}_${r.lng.toFixed(3)}`;
-                merged.set(dedupKey, {
-                    ...r,
-                    id: r.id || Math.floor(Math.random() * 1000000) + 10000,
-                    is_osm: true
+                // Build dedup set from cached data
+                const existingKeys = new Set<string>();
+                cachedData.forEach((r) => {
+                    if (r.lat && r.lng && r.name) {
+                        existingKeys.add(`${r.name.toLowerCase().trim()}_${r.lat.toFixed(3)}_${r.lng.toFixed(3)}`);
+                    }
                 });
-            });
 
-            // Add DB data, overwriting any matching OSM records (DB is ground truth)
-            dbData.forEach((r: Restaurant) => {
-                if (!r.lat || !r.lng) return;
-                const dedupKey = `${r.name.toLowerCase().trim()}_${r.lat.toFixed(3)}_${r.lng.toFixed(3)}`;
-                merged.set(dedupKey, r);
-            });
+                // Filter to only truly new restaurants from OSM
+                const newRestaurants: Restaurant[] = [];
+                osmData.forEach((r: any) => {
+                    if (!r.lat || !r.lng || !r.name || r.name === "Unknown") return;
+                    const dedupKey = `${r.name.toLowerCase().trim()}_${r.lat.toFixed(3)}_${r.lng.toFixed(3)}`;
+                    if (existingKeys.has(dedupKey)) return; // Already have this one
+                    existingKeys.add(dedupKey);
+                    newRestaurants.push({
+                        ...r,
+                        id: r.id || Math.floor(Math.random() * 1000000) + 10000,
+                        is_osm: true,
+                    });
+                });
 
-            const finalData = Array.from(merged.values());
-            setRestaurants(finalData);
-
-            finalData.forEach((r) => {
-                const isOsm = r.is_osm === true;
-                const key = isOsm ? `osm-${r.id}` : `db-${r.id}`;
-                const color = getMarkerColor(undefined); // Unanalyzed by default
-                const marker = leaflet
-                    .marker([r.lat, r.lng], { icon: makeIcon(color, false) })
-                    .addTo(map)
-                    .bindTooltip(r.name, {
-                        className: "leaflet-tooltip-dark",
-                        direction: "top",
-                    })
-                    .on("click", () => handleMarkerClick(r, key));
-
-                markersRef.current.set(key, marker);
+                if (newRestaurants.length > 0) {
+                    // Merge new OSM restaurants into state & add pins to map
+                    setRestaurants((prev) => [...prev, ...newRestaurants]);
+                    addMarkersToMap(newRestaurants, map, leaflet);
+                }
+            }).catch(() => {
+                // Overpass failed — no problem, cached data is already displayed
             });
         } catch {
             // Silently handle errors
         }
-    }, []);
+    }, [addMarkersToMap]);
 
     const handleMarkerClick = useCallback(async (r: Restaurant, key: string) => {
         // Deselect previous
@@ -282,6 +259,19 @@ export default function MapPage() {
 
         mapInstanceRef.current?.panTo([r.lat, r.lng], { animate: true, duration: 0.5 });
 
+        // ── FAST PATH: Check pre-computed cache FIRST (instant, no spinner) ──
+        const precomputed = getPrecomputedAnalysis(r.id, r.place_id);
+        if (precomputed) {
+            setAnalysis(precomputed);
+            setAnalysisError(null);
+            setAnalyzing(false);
+            const score = precomputed.tts_score;
+            setScores((prev) => new Map(prev).set(key, score));
+            marker?.setIcon(makeIcon(getMarkerColor(score), true));
+            return; // Done — no API calls, no Gemini, no spinner
+        }
+
+        // ── SLOW PATH: Not in cache — full analysis with API calls ──
         setAnalysis(null);
         setAnalysisError(null);
         setAnalyzing(true);
@@ -423,7 +413,7 @@ export default function MapPage() {
         const t = setTimeout(async () => {
             const query = searchQuery.toLowerCase().trim();
 
-            // 1. Instant local search (checks all 1600+ pins on the map first)
+            // 1. Instant local search (checks all 1500+ pins on the map first)
             const localHits = restaurants.filter(
                 r => r.name.toLowerCase().includes(query) ||
                     (r.cuisine && r.cuisine.toLowerCase().includes(query))
@@ -608,6 +598,9 @@ export default function MapPage() {
 
     return (
         <>
+            <h1 className="sr-only" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>
+                Find Authentic Local Restaurants with AI Intelligence
+            </h1>
             {/* Viewport meta for mobile */}
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
             <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -810,14 +803,36 @@ export default function MapPage() {
                 {(showResults && (searchResults.length > 0 || isAskingAI || aiResponse || searchQuery)) && (
                     <div className="search-results">
                         {(isAskingAI || aiResponse) && (
-                            <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)", background: "rgba(168, 85, 247, 0.05)" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", color: "#a855f7", fontWeight: 600, fontSize: "13px" }}>
-                                    <Sparkles size={14} /> Praxis Loci Assistant
+                            <div style={{
+                                position: "relative",
+                                padding: "16px",
+                                borderBottom: "1px solid var(--border)",
+                                background: "linear-gradient(145deg, rgba(168, 85, 247, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%)",
+                                overflow: "hidden"
+                            }}>
+                                <div style={{
+                                    position: "absolute",
+                                    top: -10, right: -10, opacity: 0.05, pointerEvents: "none"
+                                }}>
+                                    <Sparkles size={80} color="#a855f7" />
+                                </div>
+                                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px", color: "#c084fc", fontWeight: 700, fontSize: "14px" }}>
+                                    <div style={{
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        width: 28, height: 28, borderRadius: "50%",
+                                        background: "linear-gradient(135deg, #a855f7, #6366f1)",
+                                        color: "white",
+                                        boxShadow: "0 0 15px rgba(168, 85, 247, 0.4)",
+                                        animation: isAskingAI ? "spin 2s linear infinite" : "pulseGlow 3s ease-in-out infinite"
+                                    }}>
+                                        <Sparkles size={14} />
+                                    </div>
+                                    Praxis Loci Assistant
                                 </div>
                                 {isAskingAI ? (
-                                    <div style={{ fontSize: "13px", color: "var(--text-muted)" }}>Thinking...</div>
+                                    <div style={{ fontSize: "14px", color: "rgba(255,255,255,0.7)" }}>Thinking...</div>
                                 ) : (
-                                    <div style={{ fontSize: "13px", color: "var(--text-primary)", lineHeight: 1.5 }}>
+                                    <div style={{ position: "relative", zIndex: 1, fontSize: "14px", color: "rgba(255,255,255,0.9)", lineHeight: 1.6 }}>
                                         {aiResponse}
                                     </div>
                                 )}
