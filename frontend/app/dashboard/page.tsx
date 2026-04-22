@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSupabaseBrowser } from '@/lib/supabase';
+import { useSession, signOut } from "next-auth/react";
 import { LogOut, MapPin, CreditCard, Shield, Zap, ArrowRight, ChevronRight, Sparkles } from "lucide-react";
 import dynamic from 'next/dynamic';
 
 const UnicornScene = dynamic(() => import('unicornstudio-react/next'), { ssr: false });
 
 export default function DashboardPage() {
-    const [user, setUser] = useState<any>(null);
+    const { data: session } = useSession();
+    const user = session?.user;
     const [tier, setTier] = useState<string>("free");
     const [mounted, setMounted] = useState(false);
     const [activeSection, setActiveSection] = useState<'overview' | 'subscription' | 'api'>('overview');
@@ -24,29 +25,8 @@ export default function DashboardPage() {
         }
     }, []);
 
-    useEffect(() => {
-        const fetchUser = async () => {
-            if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-            const supabase = getSupabaseBrowser();
-            const { data } = await supabase.auth.getUser();
-            if (data?.user) {
-                setUser(data.user);
-                const { data: profile } = await supabase
-                    .from("users")
-                    .select("subscription_tier")
-                    .eq("id", data.user.id)
-                    .single();
-                if (profile?.subscription_tier) setTier(profile.subscription_tier);
-            }
-        };
-        fetchUser();
-    }, []);
-
     const handleLogout = async () => {
-        if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-        const supabase = getSupabaseBrowser();
-        await supabase.auth.signOut();
-        window.location.href = "/";
+        await signOut({ callbackUrl: "/" });
     };
 
     const tierLabel = tier === "premium" ? "ANALYST" : tier === "pro" ? "INSIDER" : "EXPLORER";
@@ -83,17 +63,20 @@ export default function DashboardPage() {
     return (
         <div style={{
             position: 'relative', minHeight: '100vh', background: '#000', color: '#fff',
-            fontFamily: "'Inter', -apple-system, sans-serif", overflow: 'hidden',
+            fontFamily: "'Inter', -apple-system, sans-serif", overflowX: 'hidden',
         }}>
             {/* ═══ UNICORN STUDIO BACKGROUND ═══ */}
             <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
                 {mounted && (
                     <UnicornScene
+                        key={`unicorn-${Date.now()}`}
                         projectId="prse7opFw0sc9FaKwFzz"
                         width="100%"
                         height="100%"
                         scale={1}
                         dpi={1.5}
+                        lazyLoad={false}
+                        production={false}
                         sdkUrl="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.1.1/dist/unicornStudio.umd.js"
                     />
                 )}
@@ -187,7 +170,7 @@ export default function DashboardPage() {
                         fontSize: 14, color: 'rgba(255,255,255,0.3)',
                         fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em',
                     }}>
-                        {user ? `Welcome, ${user.email?.split('@')[0]}` : 'Loading...'}
+                        {user ? `Welcome, ${user.name || user.email?.split('@')[0]}` : 'Loading...'}
                     </p>
                 </div>
 
@@ -197,6 +180,87 @@ export default function DashboardPage() {
                     {/* OVERVIEW */}
                     {activeSection === 'overview' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                            {/* ═══ MASSIVE MAP CTA — the hero action ═══ */}
+                            <a href="/" id="launch-map-btn" className="map-cta-link" style={{
+                                display: 'block',
+                                textDecoration: 'none',
+                                position: 'relative',
+                                borderRadius: 24,
+                                overflow: 'hidden',
+                                cursor: 'pointer',
+                            }}>
+                                {/* Animated gradient border */}
+                                <div className="map-cta-border" style={{
+                                    position: 'absolute', inset: 0,
+                                    borderRadius: 24,
+                                    padding: 2,
+                                    background: 'linear-gradient(135deg, #06b6d4, #8b5cf6, #ec4899, #06b6d4)',
+                                    backgroundSize: '300% 300%',
+                                    animation: 'gradientShift 4s ease infinite',
+                                    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                                    WebkitMaskComposite: 'xor',
+                                    maskComposite: 'exclude',
+                                }} />
+
+                                {/* Inner content */}
+                                <div className="map-cta-inner" style={{
+                                    position: 'relative',
+                                    padding: '40px 32px',
+                                    borderRadius: 24,
+                                    background: 'linear-gradient(145deg, rgba(6,182,212,0.08) 0%, rgba(139,92,246,0.06) 50%, rgba(0,0,0,0.4) 100%)',
+                                    backdropFilter: 'blur(24px)',
+                                    WebkitBackdropFilter: 'blur(24px)',
+                                    textAlign: 'center',
+                                    transition: 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                                    boxShadow: '0 0 60px rgba(6,182,212,0.12), 0 0 120px rgba(139,92,246,0.06), inset 0 1px 0 rgba(255,255,255,0.06)',
+                                }}>
+                                    {/* Floating map pin icon */}
+                                    <div style={{
+                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                        width: 72, height: 72, borderRadius: '50%',
+                                        background: 'linear-gradient(135deg, rgba(6,182,212,0.2), rgba(139,92,246,0.15))',
+                                        border: '1px solid rgba(6,182,212,0.2)',
+                                        marginBottom: 20,
+                                        boxShadow: '0 0 40px rgba(6,182,212,0.2), 0 0 80px rgba(6,182,212,0.08)',
+                                        animation: 'pulseGlow 3s ease-in-out infinite',
+                                    }}>
+                                        <MapPin size={32} color="#22d3ee" style={{ filter: 'drop-shadow(0 0 12px rgba(34,211,238,0.6))' }} />
+                                    </div>
+
+                                    <div style={{
+                                        fontSize: 'clamp(20px, 3vw, 28px)',
+                                        fontWeight: 900,
+                                        letterSpacing: '-0.03em',
+                                        color: '#fff',
+                                        marginBottom: 8,
+                                        lineHeight: 1.1,
+                                    }}>
+                                        Launch Restaurant Map
+                                    </div>
+                                    <div style={{
+                                        fontSize: 14, color: 'rgba(255,255,255,0.4)',
+                                        marginBottom: 24, lineHeight: 1.5,
+                                    }}>
+                                        Explore 1,500+ restaurants with AI-powered Tourist Targeting Scores
+                                    </div>
+
+                                    {/* Big pill button inside */}
+                                    <div style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: 10,
+                                        padding: '16px 40px',
+                                        borderRadius: 9999,
+                                        background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
+                                        fontSize: 15, fontWeight: 800, color: '#fff',
+                                        letterSpacing: '-0.01em',
+                                        boxShadow: '0 6px 40px rgba(6,182,212,0.35), 0 0 80px rgba(139,92,246,0.15)',
+                                        transition: 'transform 0.3s, box-shadow 0.3s',
+                                    }}>
+                                        Open Map <ArrowRight size={18} />
+                                    </div>
+                                </div>
+                            </a>
+
                             {/* Stats */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
                                 {[
@@ -220,61 +284,64 @@ export default function DashboardPage() {
                                 ))}
                             </div>
 
-                            {/* Account card */}
-                            <div style={glassCard}>
-                                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: 16 }}>
-                                    Account
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                    <div>
-                                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 4 }}>Email</div>
-                                        <div style={{
-                                            padding: '10px 14px', borderRadius: 12,
-                                            background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.05)',
-                                            fontSize: 13, color: 'rgba(255,255,255,0.6)',
-                                            fontFamily: "'SF Mono', 'Fira Code', monospace",
-                                        }}>
-                                            {user?.email || '...'}
+                            {/* Account + Quick links row */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                {/* Account card */}
+                                <div style={glassCard}>
+                                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: 16 }}>
+                                        Account
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                        <div>
+                                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 4 }}>Email</div>
+                                            <div style={{
+                                                padding: '10px 14px', borderRadius: 12,
+                                                background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.05)',
+                                                fontSize: 12, color: 'rgba(255,255,255,0.6)',
+                                                fontFamily: "'SF Mono', 'Fira Code', monospace",
+                                                overflow: 'hidden', textOverflow: 'ellipsis',
+                                            }}>
+                                                {user?.email || '...'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 4 }}>Session</div>
+                                            <div style={{
+                                                padding: '10px 14px', borderRadius: 12,
+                                                background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.05)',
+                                                fontSize: 12, color: '#34d399',
+                                            }}>
+                                                ● Active
+                                            </div>
                                         </div>
                                     </div>
-                                    <div>
-                                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 4 }}>Joined</div>
-                                        <div style={{
-                                            padding: '10px 14px', borderRadius: 12,
-                                            background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.05)',
-                                            fontSize: 13, color: 'rgba(255,255,255,0.6)',
-                                        }}>
-                                            {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '...'}
-                                        </div>
-                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Quick links */}
-                            <div style={glassCard}>
-                                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: 16 }}>
-                                    Quick Actions
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                    {[
-                                        { href: '/', label: 'Open Restaurant Map', icon: MapPin, glow: '#22d3ee' },
-                                        { href: '/pricing', label: 'View Plans', icon: CreditCard, glow: '#a78bfa' },
-                                        { href: '/about', label: 'About Praxis Loci', icon: Sparkles, glow: '#34d399' },
-                                    ].map(({ href, label, icon: Icon, glow }) => (
-                                        <a key={href} href={href} style={{
-                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                            padding: '12px 14px', borderRadius: 12,
-                                            background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)',
-                                            textDecoration: 'none', color: '#fff', fontSize: 13, fontWeight: 500,
-                                            transition: 'all 0.2s',
-                                        }}>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                <Icon size={14} color={glow} style={{ filter: `drop-shadow(0 0 6px ${glow}40)` }} />
-                                                {label}
-                                            </span>
-                                            <ChevronRight size={13} color="rgba(255,255,255,0.2)" />
-                                        </a>
-                                    ))}
+                                {/* Other links */}
+                                <div style={glassCard}>
+                                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: 16 }}>
+                                        Quick Links
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                        {[
+                                            { href: '/pricing', label: 'View Plans', icon: CreditCard, glow: '#a78bfa' },
+                                            { href: '/about', label: 'About Praxis Loci', icon: Sparkles, glow: '#34d399' },
+                                        ].map(({ href, label, icon: Icon, glow }) => (
+                                            <a key={href} href={href} style={{
+                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                padding: '12px 14px', borderRadius: 12,
+                                                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)',
+                                                textDecoration: 'none', color: '#fff', fontSize: 13, fontWeight: 500,
+                                                transition: 'all 0.2s',
+                                            }}>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                    <Icon size={14} color={glow} style={{ filter: `drop-shadow(0 0 6px ${glow}40)` }} />
+                                                    {label}
+                                                </span>
+                                                <ChevronRight size={13} color="rgba(255,255,255,0.2)" />
+                                            </a>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
